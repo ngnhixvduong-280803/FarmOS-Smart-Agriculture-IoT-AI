@@ -1,0 +1,24 @@
+#!/bin/sh
+# Certbot deploy hook for the public FarmOS MQTT listener.
+# It is executed as root after a successful certificate renewal.
+set -eu
+
+DOMAIN=mqtt.farmos.trendhub.sbs
+CERT_DIR="/etc/letsencrypt/live/$DOMAIN"
+MQTT_DIR=/opt/farmos/mosquitto
+COMPOSE_FILE=/opt/farmos/docker-compose.production.yml
+ENV_FILE=/opt/farmos/.env
+
+test -r "$CERT_DIR/fullchain.pem"
+test -r "$CERT_DIR/privkey.pem"
+
+# The image entrypoint starts as root but Mosquitto itself runs as this user.
+MOSQUITTO_UID="$(docker run --rm --entrypoint sh eclipse-mosquitto:2 -c 'id -u mosquitto')"
+MOSQUITTO_GID="$(docker run --rm --entrypoint sh eclipse-mosquitto:2 -c 'id -g mosquitto')"
+install -d -m 700 -o "$MOSQUITTO_UID" -g "$MOSQUITTO_GID" "$MQTT_DIR/certs"
+
+install -m 644 "$CERT_DIR/fullchain.pem" "$MQTT_DIR/certs/fullchain.pem"
+install -m 640 -o "$MOSQUITTO_UID" -g "$MOSQUITTO_GID" \
+  "$CERT_DIR/privkey.pem" "$MQTT_DIR/certs/privkey.pem"
+
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" restart mosquitto

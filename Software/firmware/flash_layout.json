@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "layoutId": "FARMOS_16M_V1",
+  "board": "farmos-esp32-s3-n16r8",
+  "chipFamily": "ESP32-S3",
+  "flashSizeBytes": 16777216,
+  "targets": {
+    "NODE": {
+      "deviceType": "SENSOR_NODE",
+      "firmwareTarget": "ESP32S3_LORA_SENSOR_V1",
+      "project": "node",
+      "partitionCsv": "partitions.csv"
+    },
+    "GATEWAY": {
+      "deviceType": "GATEWAY",
+      "firmwareTarget": "ESP32S3_LORA_GATEWAY_V1",
+      "project": "gateway",
+      "partitionCsv": "partitions.csv"
+    }
+  },
+  "partitionTable": {
+    "offset": 65536,
+    "reservedSizeBytes": 4096
+  },
+  "bootloaderRegion": {
+    "offset": 0,
+    "reservedSizeBytes": 65536
+  },
+  "profiles": {
+    "usb": {
+      "sdkconfigDefaults": "sdkconfig.defaults",
+      "developmentIdentity": false,
+      "nvsEncryption": false,
+      "secureBoot": false,
+      "flashEncryption": false,
+      "requiresOfflineSigning": true,
+      "requiresEfuseProvisioning": false
+    }
+  },
+  "partitions": [
+    { "name": "nvs", "role": "NVS", "offset": 69632, "sizeBytes": 32768 },
+    { "name": "otadata", "role": "OTA_DATA", "offset": 102400, "sizeBytes": 8192 },
+    { "name": "phy_init", "role": "PHY_INIT", "offset": 110592, "sizeBytes": 4096 },
+    { "name": "ota_0", "role": "APP", "offset": 131072, "sizeBytes": 3145728 },
+    { "name": "ota_1", "role": "APP", "offset": 3276800, "sizeBytes": 3145728 },
+    { "name": "factory_cfg", "role": "FACTORY_IDENTITY", "offset": 6422528, "sizeBytes": 65536 },
+    { "name": "nvs_keys", "role": "NVS_KEYS", "offset": 6488064, "sizeBytes": 4096 },
+    { "name": "storage", "role": "STORAGE", "offset": 6492160, "sizeBytes": 10153984 },
+    { "name": "coredump", "role": "COREDUMP", "offset": 16646144, "sizeBytes": 131072 }
+  ],
+  "protectedRanges": [
+    {
+      "name": "factory_identity",
+      "partition": "factory_cfg",
+      "offset": 6422528,
+      "sizeBytes": 65536,
+      "reason": "Factory identity, attestation private key, QR binding and ticket replay state"
+    },
+    {
+      "name": "nvs_keys",
+      "partition": "nvs_keys",
+      "offset": 6488064,
+      "sizeBytes": 4096,
+      "reason": "NVS encryption key material"
+    }
+  ],
+  "artifacts": {
+    "bootloader": { "role": "BOOTLOADER", "offset": 0 },
+    "partitions": { "role": "PARTITION_TABLE", "offset": 65536 },
+    "otaData": { "role": "OTA_DATA", "offset": 102400 },
+    "application": { "role": "APP", "offset": 131072 }
+  },
+  "normalReflash": {
+    "writableRoles": ["APP", "OTA_DATA"],
+    "readbackRole": "APP",
+    "readbackPartition": "ota_0",
+    "readbackOffset": 131072,
+    "protectedRanges": ["factory_identity", "nvs_keys"],
+    "writePlan": "NORMAL_REFLASH"
+  },
+  "writePlans": {
+    "NORMAL_REFLASH": [
+      {
+        "order": 10,
+        "phase": "WRITE_APP",
+        "artifact": "application",
+        "role": "APP",
+        "address": 131072,
+        "verifyBeforeNext": true
+      },
+      {
+        "order": 20,
+        "phase": "COMMIT_OTA0_LAST",
+        "artifact": "otaData",
+        "role": "OTA_DATA",
+        "address": 102400,
+        "selector": "ota_0",
+        "requiresPrevious": "APP",
+        "verifyBeforeReboot": true
+      }
+    ],
+    "FACTORY_FULL_FLASH": [
+      {
+        "order": 10,
+        "phase": "BOOTLOADER",
+        "artifact": "bootloader",
+        "role": "BOOTLOADER",
+        "address": 0,
+        "verifyBeforeNext": true
+      },
+      {
+        "order": 20,
+        "phase": "PARTITION_TABLE",
+        "artifact": "partitions",
+        "role": "PARTITION_TABLE",
+        "address": 65536,
+        "verifyBeforeNext": true
+      },
+      {
+        "order": 30,
+        "phase": "WRITE_APP",
+        "artifact": "application",
+        "role": "APP",
+        "address": 131072,
+        "verifyBeforeNext": true
+      },
+      {
+        "order": 40,
+        "phase": "COMMIT_OTA0_LAST",
+        "artifact": "otaData",
+        "role": "OTA_DATA",
+        "address": 102400,
+        "selector": "ota_0",
+        "requiresPrevious": "APP",
+        "verifyBeforeReboot": true
+      }
+    ]
+  }
+}

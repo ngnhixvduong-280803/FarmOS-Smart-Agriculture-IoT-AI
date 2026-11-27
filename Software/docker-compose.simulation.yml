@@ -1,0 +1,33 @@
+# Independent project: does not restart/replace any FarmOS cloud service.
+name: farmos-simulation
+services:
+  simulator:
+    build:
+      context: ./simulator
+    image: ${FARMOS_SIMULATOR_IMAGE:-farmos-simulation-lab:local}
+    restart: unless-stopped
+    init: true
+    env_file:
+      - path: ./simulator/.env.lab
+        required: false
+    environment:
+      FARMOS_LAB_BIND: 0.0.0.0
+      FARMOS_LAB_PORT: 4010
+      FARMOS_LAB_PUBLIC_PORT: ${FARMOS_LAB_PUBLIC_PORT:-4010}
+      FARMOS_LAB_DATA_DIR: /data
+    ports:
+      - "127.0.0.1:${FARMOS_LAB_PUBLIC_PORT:-4010}:4010"
+    volumes:
+      - simulation_data:/data
+    mem_limit: 512m
+    cpus: 0.5
+    pids_limit: 128
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+volumes:
+  simulation_data:

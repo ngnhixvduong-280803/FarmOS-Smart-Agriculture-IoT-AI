@@ -1,0 +1,890 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String
+  name       String?
+  avatar_url String?
+  role       String   @default("USER") // ADMIN, USER
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user_farms UserFarm[]
+  nodes      Node[]
+
+  @@map("users")
+}
+
+model UserFarm {
+  user_id String
+  farm_id String
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  farm    Farm   @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, farm_id])
+  @@map("user_farms")
+}
+
+model Farm {
+  id         String     @id
+  name       String
+  location   String?
+  address    String?
+  latitude   Float?
+  longitude  Float?
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  zones      Zone[]
+  nodes      Node[]
+  alerts     Alert[]
+  user_farms UserFarm[]
+  journal_entries FarmJournalEntry[]
+
+  @@map("farms")
+}
+
+model Zone {
+  id                  String          @id
+  farm_id             String
+  farm                Farm            @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  name                String
+  crop_type           String?
+  target_moisture_min Float           @default(40.0)
+  target_moisture_max Float           @default(70.0)
+  valve_id            String?
+  created_at          DateTime        @default(now())
+  updated_at          DateTime        @updatedAt
+  nodes               Node[]
+  telemetries         TelemetryData[]
+  irrigation_logs     IrrigationLog[]
+  alerts              Alert[]
+
+  @@map("zones")
+}
+
+model Node {
+  id               String             @id
+  serial_number    String?            @unique
+  name             String?
+  farm_id          String?
+  farm             Farm?              @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  zone_id          String?
+  zone             Zone?              @relation(fields: [zone_id], references: [id], onDelete: SetNull)
+  owner_id         String?
+  owner            User?              @relation(fields: [owner_id], references: [id], onDelete: SetNull)
+  type             String             @default("SENSOR_NODE") // SENSOR_NODE, GATEWAY
+  connection_mode  NodeConnectionMode @default(WIFI) // WIFI, LORA_GATEWAY
+  deployment_mode  String             @default("LEAF_NODE") // GATEWAY, LEAF_NODE, STANDALONE_NODE
+  capabilities     String[]           @default([])
+  gateway_id       String?
+  gateway          Node?              @relation("GatewayNodes", fields: [gateway_id], references: [id], onDelete: SetNull)
+  sensor_nodes     Node[]             @relation("GatewayNodes")
+  is_activated     Boolean            @default(false)
+  latitude         Float?
+  longitude        Float?
+  online           Boolean            @default(false)
+  rssi             Float?
+  firmware_version String?
+  last_seen        DateTime?
+  created_at       DateTime           @default(now())
+  updated_at       DateTime           @updatedAt
+  pump_ready_at    DateTime?
+  pump_commands    PumpCommand[]
+  telemetries      TelemetryData[]
+  ota_events       OtaEvent[]
+  ota_jobs         OtaUpdateJob[]
+
+  @@index([farm_id, is_activated])
+  @@index([zone_id])
+  @@index([owner_id])
+  @@index([gateway_id])
+  @@map("nodes")
+}
+
+enum NodeConnectionMode {
+  WIFI
+  LORA_GATEWAY
+}
+
+// A HardwareBoard is the server-side identity of one physical board. The
+// board_key is an HMAC digest of factory material and is never a raw MAC or
+// chip identity. It is intentionally retained even when all device
+// generations have been retired: a physical board is not hard-deletable.
+model HardwareBoard {
+  id                String               @id @default(uuid())
+  board_key         String               @unique
+  chip_family       String
+  hardware_revision String?
+  identity_source   String               @default("FACTORY_EFUSE_HMAC")
+  state             HardwareBoardState   @default(ACTIVE)
+  block_reason      String?
+  blocked_at        DateTime?
+  last_seen_at      DateTime?
+  created_at        DateTime             @default(now())
+  updated_at        DateTime             @updatedAt
+  identities        DeviceIdentity[]
+  flash_jobs        FlashJob[]
+  audit_events      HardwareBoardAudit[]
+
+  @@index([state, created_at])
+  @@index([chip_family, state])
+  @@map("hardware_boards")
+}
+
+enum HardwareBoardState {
+  ACTIVE
+  RESET_PENDING
+  BLOCKED
+  UNBOUND
+}
+
+enum DeviceGenerationState {
+  PENDING
+  ACTIVE
+  RETIRED
+  REVOKED
+}
+
+enum FlashJobState {
+  CREATED
+  BOARD_RESOLVED
+  MANIFEST_READY
+  ENROLLMENT_ISSUED
+  FLASHING
+  READBACK_VERIFIED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum FlashJobMode {
+  NORMAL_REFLASH
+  RESET_REPROVISION
+}
+
+enum FlashTargetType {
+  NODE
+  GATEWAY
+}
+
+enum FirmwareReleaseState {
+  DRAFT
+  ACTIVE
+  PAUSED
+  REVOKED
+}
+
+model FirmwareRelease {
+  id                 String               @id
+  device_type        String
+  firmware_target    String
+  hardware_revisions String[]             @default([])
+  partition_scheme   String
+  version            String
+  artifact_file_name String?
+  artifact_url       String?
+  // Legacy app-image fields remain for readback/OTA compatibility. The signed
+  // manifest's complete ordered image set is stored in images_json.
+  flash_offset       Int                  @default(131072)
+  artifact_sha256    String
+  manifest_sha256    String
+  manifest_signature String
+  manifest_key_id    String
+  size_bytes         Int
+  images_json        Json                 @default("[]")
+  write_plans_json   Json                 @default("[]")
+  status             FirmwareReleaseState @default(DRAFT)
+  min_version        String?
+  rollout_percent    Int                  @default(100)
+  changelog          String?
+  created_by_id      String?
+  created_at         DateTime             @default(now())
+  updated_at         DateTime             @updatedAt
+  flash_jobs         FlashJob[]
+
+  @@unique([firmware_target, version])
+  @@index([device_type, status, version])
+  @@index([artifact_sha256])
+  @@map("firmware_releases")
+}
+
+model FlashJob {
+  id                       String          @id @default(uuid())
+  idempotency_key          String          @unique
+  hardware_board_id        String
+  hardware_board           HardwareBoard   @relation(fields: [hardware_board_id], references: [id], onDelete: Restrict)
+  source_device_id         String?
+  source_identity          DeviceIdentity? @relation(fields: [source_device_id], references: [device_id], onDelete: Restrict)
+  release_id               String
+  release                  FirmwareRelease @relation(fields: [release_id], references: [id], onDelete: Restrict)
+  target_type              FlashTargetType
+  mode                     FlashJobMode    @default(NORMAL_REFLASH)
+  status                   FlashJobState   @default(CREATED)
+  progress                 Int             @default(0)
+  enrollment_public_key    String?
+  enrollment_key_algorithm String?
+  enrollment_ticket_payload String?
+  enrollment_ticket_signature String?
+  enrollment_ticket_key_id String?
+  pending_device_id        String?
+  pending_serial_number    String?
+  pending_generation       Int?
+  challenge_hash           String?
+  ticket_hash              String?
+  readback_sha256          String?
+  readback_length          Int?
+  attestation_message      String?
+  attestation_signature    String?
+  resulting_device_id      String?
+  error_code               String?
+  error_message            String?
+  initiated_by_type        String
+  initiated_by_id          String
+  expires_at               DateTime
+  completed_at             DateTime?
+  cancelled_at             DateTime?
+  created_at               DateTime        @default(now())
+  updated_at               DateTime        @updatedAt
+  events                   FlashJobEvent[]
+
+  @@index([hardware_board_id, status])
+  @@index([source_device_id, created_at])
+  @@index([release_id, status])
+  @@index([expires_at, status])
+  @@map("flash_jobs")
+}
+
+model FlashJobEvent {
+  id              String         @id @default(uuid())
+  flash_job_id    String
+  flash_job       FlashJob       @relation(fields: [flash_job_id], references: [id], onDelete: Cascade)
+  from_state      FlashJobState?
+  to_state        FlashJobState
+  progress        Int?
+  actor_type      String
+  actor_id        String?
+  idempotency_key String?        @unique
+  metadata        Json?
+  created_at      DateTime       @default(now())
+
+  @@index([flash_job_id, created_at])
+  @@index([to_state, created_at])
+  @@map("flash_job_events")
+}
+
+model HardwareBoardAudit {
+  id                String        @id @default(uuid())
+  hardware_board_id String
+  hardware_board    HardwareBoard @relation(fields: [hardware_board_id], references: [id], onDelete: Restrict)
+  action            String
+  actor_type        String
+  actor_id          String?
+  idempotency_key   String?       @unique
+  reason            String?
+  metadata          Json?
+  created_at        DateTime      @default(now())
+
+  @@index([hardware_board_id, created_at])
+  @@index([action, created_at])
+  @@map("hardware_board_audits")
+}
+
+model OtaEvent {
+  id             String        @id @default(uuid())
+  device_id      String
+  device         Node          @relation(fields: [device_id], references: [id], onDelete: Cascade)
+  device_type    String
+  target_version String
+  status         String
+  progress       Int?
+  error          String?
+  reporter_type  String
+  reporter_id    String
+  job_id         String?
+  job            OtaUpdateJob? @relation(fields: [job_id], references: [id], onDelete: SetNull)
+  created_at     DateTime      @default(now())
+
+  @@index([device_id, created_at])
+  @@index([status, created_at])
+  @@map("ota_events")
+}
+
+model OtaUpdateJob {
+  id                String     @id @default(uuid())
+  device_id         String
+  device            Node       @relation(fields: [device_id], references: [id], onDelete: Cascade)
+  release_id        String
+  firmware_target   String
+  target_version    String
+  target_sha256     String
+  status            String     @default("AVAILABLE") // AVAILABLE, DOWNLOADING, FLASHING, FLASHED, BOOT_CONFIRMED, FAILED
+  initiated_by_type String
+  initiated_by_id   String
+  expires_at        DateTime
+  created_at        DateTime   @default(now())
+  updated_at        DateTime   @updatedAt
+  events            OtaEvent[]
+
+  @@unique([device_id, release_id])
+  @@index([device_id, status])
+  @@index([expires_at])
+  @@map("ota_update_jobs")
+}
+
+model TelemetryData {
+  id            String   @id @default(uuid())
+  timestamp     DateTime @default(now())
+  farm_id       String
+  zone_id       String
+  zone          Zone     @relation(fields: [zone_id], references: [id], onDelete: Cascade)
+  node_id       String
+  node          Node     @relation(fields: [node_id], references: [id], onDelete: Cascade)
+  soil_moisture Float?
+  soil_temp     Float?
+  air_temp      Float?
+  air_humidity  Float?
+  lux           Float?
+  quality       Int      @default(1)
+  created_at    DateTime @default(now())
+
+  @@index([zone_id, timestamp])
+  @@index([node_id, timestamp])
+  @@map("telemetry_data")
+}
+
+// A gateway assigns one eventId before putting a QoS 1 message in its local
+// outbox. Keeping that id server-side makes retry after PUBACK/network failure
+// idempotent across backend restarts as well as within a single process.
+model IngestEvent {
+  event_id     String   @id
+  message_type String
+  farm_id      String
+  node_id      String
+  received_at  DateTime @default(now())
+
+  @@index([received_at])
+  @@map("ingest_events")
+}
+
+// Immutable factory identity. A device can be sold independently; ownership
+// and the current Node -> Gateway binding are established during onboarding.
+model DeviceIdentity {
+  device_id               String                        @id
+  serial_number           String                        @unique
+  type                    String
+  capabilities            String[]                      @default([])
+  firmware_target         String                        @default("ESP32S3_LORA_SENSOR_V1")
+  hardware_revision       String                        @default("REV_A")
+  partition_scheme        String                        @default("FARMOS_16M_V1")
+  bootloader_version      String?
+  model                   String?
+  ble_name                String?
+  claim_code_hash         String
+  state                   DeviceIdentityState           @default(INVENTORY)
+  hardware_board_id       String?
+  hardware_board          HardwareBoard?                @relation(fields: [hardware_board_id], references: [id], onDelete: Restrict)
+  generation              Int                           @default(1)
+  generation_state        DeviceGenerationState         @default(ACTIVE)
+  is_current              Boolean                       @default(true)
+  claimed_by_id           String?
+  claimed_farm_id         String?
+  claimed_at              DateTime?
+  batch_id                String?
+  batch                   ManufacturingBatch?           @relation(fields: [batch_id], references: [id], onDelete: SetNull)
+  qr_label                DeviceQrLabel?
+  lifecycle_events        DeviceLifecycleEvent[]
+  claim_sessions          DeviceClaimSession[]
+  flash_jobs              FlashJob[]
+  qr_revocations          DeviceQrRevocation[]
+  key_revocations         DeviceIdentityKeyRevocation[]
+  lifecycle_commands      DeviceLifecycleCommand[]
+  public_key              String?
+  public_key_algorithm    String?
+  public_key_fingerprint  String?
+  identity_key_version    Int                           @default(1)
+  key_rotated_at          DateTime?
+  // Legacy inventory rows must never be silently presented as QR v3. New
+  // manufacturing allocation sets this explicitly to 3.
+  identity_version        Int                           @default(2)
+  factory_cfg_hash        String?
+  factory_firmware_sha256 String?
+  factory_station_id      String?
+  factory_readback_proof  String?
+  factory_written_at      DateTime?
+  factory_verified_at     DateTime?
+  created_at              DateTime                      @default(now())
+  updated_at              DateTime                      @updatedAt
+
+  @@index([state, type])
+  @@index([firmware_target, hardware_revision])
+  @@index([batch_id, state])
+  @@index([hardware_board_id, generation_state])
+  @@index([hardware_board_id, generation])
+  @@index([is_current, generation_state])
+  @@map("device_identities")
+}
+
+enum DeviceIdentityState {
+  INVENTORY
+  LEGACY
+  ALLOCATED
+  FACTORY_WRITTEN
+  VERIFIED
+  QC_PASSED
+  READY_TO_SHIP
+  CLAIMED
+  QUARANTINED
+  REVOKED
+}
+
+// A destructive account release is a board command, not an immediate database
+// mutation.  The device keeps its current credential until it has durably
+// accepted the command and reports APPLIED.
+enum DeviceLifecycleCommandType {
+  RELEASE_ACCOUNT
+  DECOMMISSION
+}
+
+enum DeviceLifecycleCommandStatus {
+  PENDING
+  ACKNOWLEDGED
+  APPLIED
+  CANCELLED
+  EXPIRED
+}
+
+model DeviceLifecycleCommand {
+  id              String                       @id @default(uuid())
+  device_id       String
+  device          DeviceIdentity               @relation(fields: [device_id], references: [device_id], onDelete: Restrict)
+  type            DeviceLifecycleCommandType
+  status          DeviceLifecycleCommandStatus @default(PENDING)
+  nonce_hash      String
+  requested_by_id String
+  reason          String?
+  expires_at      DateTime
+  acknowledged_at DateTime?
+  applied_at      DateTime?
+  created_at      DateTime                     @default(now())
+  updated_at      DateTime                     @updatedAt
+
+  @@index([device_id, status, expires_at])
+  @@map("device_lifecycle_commands")
+}
+
+enum ManufacturingBatchStatus {
+  DRAFT
+  OPEN
+  IN_PROGRESS
+  COMPLETE
+  QC_PASSED
+  READY_TO_SHIP
+  QUARANTINED
+  CANCELLED
+}
+
+enum DeviceQrLabelState {
+  ISSUED
+  PRINTED
+  REPRINTED
+  QUARANTINED
+  REVOKED
+}
+
+enum DeviceLifecycleEventType {
+  IDENTITY_ALLOCATED
+  FACTORY_WRITTEN
+  FACTORY_READBACK_VERIFIED
+  QR_ISSUED
+  QR_PRINT_CONFIRMED
+  QR_REPRINTED
+  QR_QUARANTINED
+  QR_REVOKED
+  DEVICE_QUARANTINED
+  CLAIM_CHALLENGE_ISSUED
+  CLAIM_ATTESTED
+  CLAIM_FINALIZED
+  LEGACY_PROVISIONED
+  QC_PASSED
+  READY_TO_SHIP
+  DEVICE_RELEASED
+}
+
+enum DeviceClaimSessionStatus {
+  CHALLENGE_ISSUED
+  ATTESTED
+  FINALIZED
+  EXPIRED
+  CANCELLED
+  FAILED
+}
+
+model ManufacturingBatch {
+  id                String                   @id @default(uuid())
+  batch_number      String                   @unique
+  model             String
+  type              String
+  hardware_revision String
+  firmware_target   String?
+  quantity          Int
+  status            ManufacturingBatchStatus @default(DRAFT)
+  metadata          Json?
+  created_by_id     String?
+  created_at        DateTime                 @default(now())
+  updated_at        DateTime                 @updatedAt
+  identities        DeviceIdentity[]
+  qr_labels         DeviceQrLabel[]
+  lifecycle_events  DeviceLifecycleEvent[]
+
+  @@index([status, created_at])
+  @@map("manufacturing_batches")
+}
+
+model DeviceQrLabel {
+  id                String                 @id @default(uuid())
+  qr_id             String                 @unique
+  device_id         String                 @unique
+  device            DeviceIdentity         @relation(fields: [device_id], references: [device_id], onDelete: Cascade)
+  batch_id          String?
+  batch             ManufacturingBatch?    @relation(fields: [batch_id], references: [id], onDelete: SetNull)
+  version           Int                    @default(3)
+  issuer            String
+  kid               String
+  canonical_payload String
+  signature         String
+  state             DeviceQrLabelState     @default(ISSUED)
+  printed_at        DateTime?
+  printed_by_id     String?
+  reprint_count     Int                    @default(0)
+  revoked_at        DateTime?
+  revoke_reason     String?
+  created_at        DateTime               @default(now())
+  updated_at        DateTime               @updatedAt
+  lifecycle_events  DeviceLifecycleEvent[]
+
+  @@index([batch_id, state])
+  @@index([state, created_at])
+  @@map("device_qr_labels")
+}
+
+// QR labels historically used a one-to-one current-label relation. Keep that
+// API/storage shape for compatibility while retaining every superseded QR in
+// an append-only revocation ledger. A reissued QR therefore cannot make the
+// previous signed payload valid again, and clients can explain why it died.
+model DeviceQrRevocation {
+  id                String         @id @default(uuid())
+  qr_id             String         @unique
+  device_id         String
+  device            DeviceIdentity @relation(fields: [device_id], references: [device_id], onDelete: Restrict)
+  generation        Int
+  canonical_payload String
+  signature         String
+  replacement_qr_id String?
+  reason            String
+  actor_type        String
+  actor_id          String?
+  idempotency_key   String?        @unique
+  revoked_at        DateTime       @default(now())
+
+  @@index([device_id, revoked_at])
+  @@index([replacement_qr_id])
+  @@map("device_qr_revocations")
+}
+
+model DeviceIdentityKeyRevocation {
+  id                     String         @id @default(uuid())
+  device_id              String
+  device                 DeviceIdentity @relation(fields: [device_id], references: [device_id], onDelete: Restrict)
+  generation             Int
+  key_version            Int
+  public_key_fingerprint String
+  public_key_algorithm   String?
+  reason                 String
+  actor_type             String
+  actor_id               String?
+  idempotency_key        String?        @unique
+  revoked_at             DateTime       @default(now())
+
+  @@index([device_id, revoked_at])
+  @@index([public_key_fingerprint])
+  @@map("device_identity_key_revocations")
+}
+
+model DeviceLifecycleEvent {
+  id              String                   @id @default(uuid())
+  device_id       String?
+  device          DeviceIdentity?          @relation(fields: [device_id], references: [device_id], onDelete: Cascade)
+  batch_id        String?
+  batch           ManufacturingBatch?      @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  qr_label_id     String?
+  qr_label        DeviceQrLabel?           @relation(fields: [qr_label_id], references: [id], onDelete: Cascade)
+  event_type      DeviceLifecycleEventType
+  from_state      DeviceIdentityState?
+  to_state        DeviceIdentityState?
+  actor_type      String
+  actor_id        String?
+  station_id      String?
+  idempotency_key String?                  @unique
+  metadata        Json?
+  created_at      DateTime                 @default(now())
+
+  @@index([device_id, created_at])
+  @@index([batch_id, created_at])
+  @@index([qr_label_id, created_at])
+  @@index([event_type, created_at])
+  @@map("device_lifecycle_events")
+}
+
+model DeviceClaimSession {
+  id                    String                   @id @default(uuid())
+  device_id             String
+  device                DeviceIdentity           @relation(fields: [device_id], references: [device_id], onDelete: Cascade)
+  user_id               String
+  farm_id               String
+  zone_id               String?
+  deployment_mode       String
+  wifi_reconfigure      Boolean                  @default(false)
+  status                DeviceClaimSessionStatus @default(CHALLENGE_ISSUED)
+  challenge             String
+  challenge_hash        String
+  attestation_signature String?
+  attestation_message   String?
+  expires_at            DateTime
+  attested_at           DateTime?
+  finalized_at          DateTime?
+  finalized_node_id     String?
+  idempotency_key       String?                  @unique
+  created_at            DateTime                 @default(now())
+  updated_at            DateTime                 @updatedAt
+
+  @@index([device_id, status, expires_at])
+  @@index([user_id, status, expires_at])
+  @@index([expires_at])
+  @@map("device_claim_sessions")
+}
+
+model GatewayProvisioningSession {
+  id              String    @id @default(uuid())
+  gateway_id      String
+  user_id         String
+  farm_id         String
+  zone_id         String?
+  deployment_mode String    @default("GATEWAY")
+  token_hash      String
+  status          String    @default("PENDING") // PENDING, REDEEMED, EXPIRED, CANCELLED
+  expires_at      DateTime
+  redeemed_at     DateTime?
+  created_at      DateTime  @default(now())
+
+  @@index([gateway_id, status])
+  @@index([expires_at])
+  @@map("gateway_provisioning_sessions")
+}
+
+// The plaintext token is returned to the Gateway once and stored in its NVS.
+// Only this keyed hash is retained server-side.
+model GatewayCredential {
+  gateway_id String    @id
+  token_hash String
+  issued_at  DateTime  @default(now())
+  revoked_at DateTime?
+
+  @@map("gateway_credentials")
+}
+
+model PairingSession {
+  id               String    @id @default(uuid())
+  node_id          String
+  gateway_id       String
+  farm_id          String
+  zone_id          String
+  requested_by_id  String
+  token_hash       String
+  status           String    @default("PENDING") // PENDING, GATEWAY_READY, ACTIVE, FAILED, EXPIRED, CANCELLED
+  expires_at       DateTime
+  gateway_ready_at DateTime?
+  confirmed_at     DateTime?
+  last_rssi        Float?
+  last_snr         Float?
+  failure_reason   String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  @@index([gateway_id, status, expires_at])
+  @@index([node_id, status])
+  @@map("pairing_sessions")
+}
+
+model NodeGatewayBinding {
+  id          String    @id @default(uuid())
+  node_id     String
+  gateway_id  String
+  farm_id     String
+  zone_id     String
+  status      String    @default("ACTIVE") // ACTIVE, REVOKED
+  key_version Int       @default(1)
+  paired_at   DateTime  @default(now())
+  revoked_at  DateTime?
+
+  @@index([node_id, status])
+  @@index([gateway_id, status])
+  @@map("node_gateway_bindings")
+}
+
+model IrrigationLog {
+  id                   String    @id @default(uuid())
+  command_id           String    @unique
+  zone_id              String
+  zone                 Zone      @relation(fields: [zone_id], references: [id], onDelete: Cascade)
+  valve_id             String?
+  duration_sec         Int
+  trigger_source       String    @default("MANUAL") // MANUAL, SCHEDULE, AI
+  status               String    @default("PENDING") // PENDING, EXECUTING, COMPLETED, FAILED, TIMEOUT, REJECTED
+  rejection_reason     String?
+  measured_flow_liters Float?
+  safety_checks_passed Boolean   @default(true)
+  error_code           Int       @default(0)
+  created_at           DateTime  @default(now())
+  completed_at         DateTime?
+
+  @@index([zone_id, created_at])
+  @@map("irrigation_logs")
+}
+
+model Alert {
+  id          String    @id @default(uuid())
+  farm_id     String
+  farm        Farm      @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  zone_id     String?
+  zone        Zone?     @relation(fields: [zone_id], references: [id], onDelete: SetNull)
+  level       String    @default("WARNING") // INFO, WARNING, CRITICAL
+  type        String // TANK_EMPTY, NODE_OFFLINE, SOIL_DRY, NO_FLOW, COMMAND_TIMEOUT
+  message     String
+  resolved    Boolean   @default(false)
+  created_at  DateTime  @default(now())
+  resolved_at DateTime?
+
+  @@index([farm_id, resolved, created_at])
+  @@map("alerts")
+}
+
+model CropProfile {
+  id                     String   @id @default(uuid())
+  crop_name              String   @unique
+  description            String?
+  optimal_moisture_min   Float
+  optimal_moisture_max   Float
+  optimal_temp_min       Float?
+  optimal_temp_max       Float?
+  water_requirement_desc String?
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+
+  @@map("crop_profiles")
+}
+
+// Synthetic observations are isolated from physical-device telemetry and alerts.
+// IDs deliberately have no cascading device relation: datasets retain their audit
+// provenance after test devices are retired. Read access is always farm-scoped.
+model SimulationSample {
+  id           String   @id @default(uuid())
+  event_id     String
+  run_id       String
+  sequence     Int
+  farm_id      String
+  gateway_id   String
+  node_id      String
+  zone_id      String
+  simulated_at DateTime
+  received_at  DateTime @default(now())
+  manifest     Json
+  observations Json
+  context      Json
+  ground_truth Json
+
+  @@unique([gateway_id, event_id])
+  @@index([farm_id, run_id, sequence, id])
+  @@index([farm_id, node_id, received_at])
+  @@index([farm_id, gateway_id, received_at])
+  @@index([received_at, id], map: "simulation_samples_received_retention_idx")
+  @@index([farm_id, received_at(sort: Desc)], map: "simulation_samples_farm_latest_idx")
+  @@index([farm_id, run_id, node_id, simulated_at(sort: Desc)], map: "simulation_samples_analysis_idx")
+  @@map("simulation_samples")
+}
+
+model SimulationHourly {
+  farm_id     String
+  run_id      String
+  gateway_id  String
+  node_id     String
+  hour        DateTime
+  received_at DateTime
+  stats       Json
+
+  @@id([farm_id, run_id, gateway_id, node_id, hour])
+  @@index([received_at], map: "simulation_hourly_received_idx")
+  @@map("simulation_hourly")
+}
+
+model SimulationHistoryEvent {
+  gateway_id   String
+  event_id     String
+  farm_id      String
+  run_id       String
+  node_id      String
+  simulated_at DateTime
+  received_at  DateTime
+  quality      Int?
+  irrigation_mm Float?
+
+  @@id([gateway_id, event_id])
+  @@index([received_at], map: "simulation_history_events_received_idx")
+  @@index([farm_id, run_id, node_id, simulated_at(sort: Desc)], map: "simulation_history_events_analysis_idx")
+  @@map("simulation_history_events")
+}
+
+// Farmer-entered records; these are observations and plans, not diagnoses.
+model FarmJournalEntry {
+  id          String   @id @default(uuid())
+  farm_id     String
+  farm        Farm     @relation(fields: [farm_id], references: [id], onDelete: Cascade)
+  category    String
+  title       String
+  notes       String   @default("")
+  occurred_at DateTime @default(now())
+  due_at      DateTime?
+  amount_vnd  Int?
+  created_by  String
+  created_at  DateTime @default(now())
+
+  @@index([farm_id, occurred_at])
+  @@index([farm_id, category, due_at])
+  @@map("farm_journal_entries")
+}
+
+
+model PumpCommand {
+  id              String   @id @default(uuid())
+  node_id         String
+  node            Node     @relation(fields: [node_id], references: [id], onDelete: Cascade)
+  requested_by_id String
+  turn_on         Boolean
+  status          String   @default("PENDING")
+  error_code      String?
+  feedback_on     Boolean?
+  created_at      DateTime @default(now())
+  expires_at      DateTime
+  confirmed_at    DateTime?
+
+  @@index([node_id, created_at])
+  @@map("pump_commands")
+}

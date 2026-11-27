@@ -1,0 +1,65 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_SUPABASE_URL: ${SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
+    container_name: farmos_frontend
+    restart: unless-stopped
+    ports:
+      - "${PUBLIC_PORT:-8080}:80"
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: farmos_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Use DATABASE_URL from .env which points to Supabase
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - MQTT_BROKER_URL=mqtt://mosquitto:1883
+      - PORT=3000
+      - FARMOS_FLASH_LAYOUT_PATH=/app/firmware/flash_layout.json
+      - FARMOS_WEB_URL=${FARMOS_WEB_URL:-${DOMAIN:-http://localhost:8080}}
+      # FARMOS_API_URL stays in env_file so the backend can normalize a
+      # temporary BACKEND_API_URL/MOBILE_API_BASE_URL alias (including its
+      # legacy /api/v1 path) instead of receiving that path as canonical.
+      - CORS_ORIGIN=${FARMOS_WEB_URL:-${DOMAIN:-http://localhost:8080}}
+    volumes:
+      - farmos_avatars:/var/lib/farmos/avatars
+    depends_on:
+      - mosquitto
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: farmos_mqtt_broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+
+  cloudflared:
+    image: ${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:latest}
+    container_name: farmos_cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - frontend
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+  farmos_avatars:

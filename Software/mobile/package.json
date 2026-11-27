@@ -1,0 +1,85 @@
+{
+  "name": "FarmOSMobile",
+  "version": "0.0.1",
+  "private": true,
+  "overrides": {
+    "@react-navigation/core": {
+      "query-string": "9.5.1"
+    },
+    "metro": {
+      "image-size": "$image-size"
+    },
+    "braces": "$braces"
+  },
+  "scripts": {
+    "prepare:config": "node scripts/prepare-public-config.mjs",
+    "prepare:config:check": "node scripts/prepare-public-config.mjs --check",
+    "android": "npm run prepare:config && react-native run-android",
+    "ios": "npm run prepare:config && react-native run-ios",
+    "lint": "eslint .",
+    "start": "npm run prepare:config && react-native start",
+    "pretest": "npm run prepare:config",
+    "test": "jest",
+    "test:config": "node --test scripts/prepare-public-config.test.mjs",
+    "generate:icons": "node scripts/generate-icons.mjs",
+    "pretypecheck": "npm run prepare:config",
+    "typecheck": "tsc --noEmit",
+    "test:braces": "node --test scripts/safe-braces.test.cjs"
+  },
+  "dependencies": {
+    "@maplibre/maplibre-react-native": "^11.3.10",
+    "@noble/hashes": "^1.8.0",
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-vector-icons/material-design-icons": "^13.1.4",
+    "@react-native/new-app-screen": "0.87.1",
+    "@react-navigation/bottom-tabs": "^7.18.18",
+    "@react-navigation/native": "^7.3.18",
+    "@react-navigation/native-stack": "^7.18.10",
+    "@supabase/supabase-js": "^2.112.4",
+    "@swan-io/react-native-browser": "^1.1.1",
+    "base-64": "^1.0.0",
+    "i18next": "^26.4.2",
+    "react": "19.2.3",
+    "react-i18next": "^17.0.13",
+    "react-native": "0.87.1",
+    "react-native-ble-plx": "^3.5.1",
+    "react-native-geolocation-service": "^5.3.1",
+    "react-native-get-random-values": "^1.11.0",
+    "react-native-image-picker": "^8.2.1",
+    "react-native-keychain": "^10.0.0",
+    "react-native-safe-area-context": "^5.5.2",
+    "react-native-screens": "^4.27.0",
+    "react-native-sfsymbols": "^1.2.2",
+    "react-native-svg": "^15.15.5",
+    "react-native-url-polyfill": "^2.0.0",
+    "react-native-vision-camera": "^4.7.3",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.3",
+    "@babel/runtime": "^7.25.0",
+    "@react-native-community/cli": "20.2.0",
+    "@react-native-community/cli-platform-android": "20.2.0",
+    "@react-native-community/cli-platform-ios": "20.2.0",
+    "@react-native/babel-preset": "0.87.1",
+    "@react-native/eslint-config": "0.87.1",
+    "@react-native/jest-preset": "0.87.1",
+    "@react-native/metro-config": "0.87.1",
+    "@react-native/typescript-config": "0.87.1",
+    "@types/base-64": "^1.0.2",
+    "@types/jest": "^29.5.13",
+    "@types/react": "^19.2.0",
+    "@types/react-test-renderer": "^19.1.0",
+    "eslint": "^8.19.0",
+    "image-size": "file:vendor/safe-image-size",
+    "jest": "^29.6.3",
+    "prettier": "2.8.8",
+    "react-test-renderer": "19.2.3",
+    "typescript": "^6.0.3",
+    "braces": "file:vendor/safe-braces"
+  },
+  "engines": {
+    "node": ">= 22.11.0"
+  }
+}

@@ -1,0 +1,283 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    font-family: 'Avenir Next', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1b2824;
+    background: #f7f8f5;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .field {
+    @apply w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/15 dark:border-slate-800 dark:bg-slate-950 dark:text-white;
+  }
+  .action {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .action-light {
+    @apply border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800;
+  }
+  .action-dark {
+    @apply border-slate-900 bg-slate-900 text-white hover:bg-slate-800 dark:border-slate-700 dark:bg-slate-800;
+  }
+  .action-green {
+    @apply border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700;
+  }
+  .action-danger {
+    @apply border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300;
+  }
+  .icon-action {
+    @apply inline-flex items-center justify-center rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white;
+  }
+
+  .admin-page__header {
+    @apply flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800 sm:flex-row sm:items-end sm:justify-between;
+  }
+  .admin-page__title {
+    @apply mt-1 text-2xl font-semibold tracking-[-0.03em] text-slate-950 dark:text-white;
+  }
+  .admin-page__intro {
+    @apply mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400;
+  }
+  .eyebrow {
+    @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-400;
+  }
+  .status-chip {
+    @apply inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold leading-none;
+  }
+  .status-chip--neutral {
+    @apply border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300;
+  }
+  .status-chip--success {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300;
+  }
+  .status-chip--warning {
+    @apply border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300;
+  }
+  .admin-panel {
+    @apply border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900;
+  }
+  .admin-panel__toolbar {
+    @apply flex flex-col gap-3 border-b border-slate-200 p-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between;
+  }
+  .admin-panel__footer {
+    @apply flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 px-4 py-3 text-[11px] text-slate-500 dark:border-slate-800;
+  }
+  .admin-alert {
+    @apply flex items-start gap-2 rounded-lg border px-3 py-2.5 text-xs;
+  }
+  .admin-alert--error {
+    @apply border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-200;
+  }
+  .inventory-summary {
+    @apply grid gap-px overflow-hidden border border-slate-200 bg-slate-200 dark:border-slate-800 dark:bg-slate-800 sm:grid-cols-3;
+  }
+  .inventory-summary__item {
+    @apply flex flex-col items-start bg-white px-4 py-4 text-left transition hover:bg-emerald-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 dark:bg-slate-900 dark:hover:bg-emerald-950/20;
+  }
+  .inventory-summary__item.is-selected {
+    @apply bg-emerald-50 dark:bg-emerald-950/30;
+  }
+  .inventory-summary__item span {
+    @apply text-xs font-medium text-slate-500 dark:text-slate-400;
+  }
+  .inventory-summary__item strong {
+    @apply mt-1 text-2xl font-semibold tabular-nums tracking-[-0.04em] text-slate-950 dark:text-white;
+  }
+  .inventory-summary__item small {
+    @apply mt-1 text-[11px] text-slate-400;
+  }
+  .data-table {
+    @apply w-full text-left text-xs;
+  }
+  .data-table th {
+    @apply bg-slate-50 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:bg-slate-950/60 dark:text-slate-400;
+  }
+  .data-table td {
+    @apply border-t border-slate-100 px-4 py-3 align-middle dark:border-slate-800;
+  }
+  .data-table tbody tr:not(.data-table__detail) {
+    @apply transition hover:bg-emerald-50/30 dark:hover:bg-emerald-950/10;
+  }
+  .data-table tbody tr.is-selected:not(.data-table__detail) {
+    @apply bg-emerald-50/50 dark:bg-emerald-950/15;
+  }
+  .data-table__empty {
+    @apply py-14 text-center text-xs text-slate-500;
+  }
+  .data-table__detail td {
+    @apply bg-slate-50/80 dark:bg-slate-950/40;
+  }
+  .inventory-detail {
+    @apply grid gap-4 sm:grid-cols-3;
+  }
+}
+
+.theme-transition,
+.theme-transition *,
+.theme-transition ::before,
+.theme-transition ::after {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Custom Clean Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.6);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.8);
+}
+
+/* Google Maps Style My-Location Blue Dot & Animations */
+/* Google Maps Style My-Location Blue Dot & Animations */
+.user-location-marker-container {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Direction beam / cone centered on the dot and rotating around it */
+.user-location-heading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  transition: transform 0.12s cubic-bezier(0.2, 0, 0.2, 1);
+  z-index: 1;
+}
+
+/* Flashlight Beam: Google Maps 60-degree radial cone pointing North */
+.user-location-beam {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(26, 115, 232, 0.52) 0%,
+    rgba(66, 133, 244, 0.32) 28%,
+    rgba(66, 133, 244, 0.12) 50%,
+    transparent 68%
+  );
+  clip-path: polygon(50% 50%, 18% 0%, 82% 0%);
+}
+
+/* Pulsing radar wave expanding outwards */
+.user-location-pulse {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(66, 133, 244, 0.35);
+  animation: gmaps-pulse 2.2s cubic-bezier(0.2, 0, 0.4, 1) infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Soft ambient halo */
+.user-location-halo {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(66, 133, 244, 0.25);
+  animation: gmaps-halo 2.2s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Core Google blue dot with crisp white border and drop shadow */
+.user-location-dot {
+  position: relative;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background-color: #1a73e8;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.25), 0 2px 7px rgba(0, 0, 0, 0.4);
+  z-index: 3;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.user-location-marker-container:hover .user-location-dot {
+  transform: scale(1.18);
+}
+
+@keyframes gmaps-pulse {
+  0% {
+    transform: scale(0.35);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes gmaps-halo {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.25;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0.55;
+  }
+}
+
+/* MapLibre popup customization for user location */
+.user-location-popup .maplibregl-popup-content {
+  padding: 0;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+}
+.dark .user-location-popup .maplibregl-popup-content {
+  background: rgba(15, 23, 42, 0.96);
+  border-color: rgba(51, 65, 85, 0.9);
+  color: #f1f5f9;
+}
+.user-location-popup .maplibregl-popup-tip {
+  border-top-color: rgba(255, 255, 255, 0.96);
+}
+.dark .user-location-popup .maplibregl-popup-tip {
+  border-top-color: rgba(15, 23, 42, 0.96);
+}

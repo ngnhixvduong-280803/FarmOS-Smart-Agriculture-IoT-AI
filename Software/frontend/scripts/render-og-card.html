@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FarmOS Open Graph card</title>
+    <style>
+      * { box-sizing: border-box; }
+
+      html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+
+      body {
+        background: #0c261b;
+        color: #f4f8f2;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      .card {
+        position: relative;
+        width: 1200px;
+        height: 630px;
+        padding: 68px 72px;
+        background: #0c261b;
+      }
+
+      .content { display: flex; flex-direction: column; width: 648px; height: 494px; }
+
+      .brand { color: #cbddce; font-size: 19px; font-weight: 700; }
+
+      h1 { max-width: 650px; margin: 76px 0 20px; font-size: 64px; line-height: 1.04; letter-spacing: -2.6px; }
+
+      .summary { max-width: 590px; margin: 0; color: #bed0c2; font-size: 23px; line-height: 1.45; }
+
+      .capabilities { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: auto; padding-top: 42px; }
+
+      .capability { min-height: 70px; padding-left: 17px; border-left: 2px solid #357457; }
+
+      .capability strong { display: block; color: #f4f8f2; font-size: 17px; line-height: 1.35; }
+
+      .capability span { display: block; margin-top: 6px; color: #9db5a4; font-size: 14px; line-height: 1.4; }
+
+      .mark-panel { position: absolute; top: 68px; right: 72px; display: flex; width: 334px; height: 494px; align-items: center; justify-content: center; border: 1px solid #28543d; border-radius: 28px; background: #103122; }
+
+      .hero-mark { width: 254px; height: 254px; object-fit: contain; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <section class="content">
+        <div class="brand">FarmOS</div>
+        <h1>Vận hành tưới rõ ràng hơn.</h1>
+        <p class="summary">Theo dõi khu vực canh tác, thiết bị và dữ liệu cảm biến trong một không gian vận hành cho nông trại.</p>
+        <div class="capabilities" aria-label="Năng lực FarmOS">
+          <div class="capability"><strong>Theo dõi khu vực</strong><span>Nhìn đúng nơi cần xử lý</span></div>
+          <div class="capability"><strong>Giám sát thiết bị</strong><span>Nắm trạng thái vận hành</span></div>
+          <div class="capability"><strong>Tưới có kiểm soát</strong><span>Đi qua quy tắc an toàn</span></div>
+        </div>
+      </section>
+      <aside class="mark-panel"><img class="hero-mark" src="../src/assets/farmos-logo.png" alt="Logo FarmOS" /></aside>
+    </main>
+  </body>
+</html>

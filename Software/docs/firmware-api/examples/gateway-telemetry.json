@@ -1,0 +1,11 @@
+{
+  "eventId": "example_boot_000001_sequence_000001",
+  "nodeId": "NODE_12345",
+  "timestamp": 1792296000,
+  "soil_temp": 26.4,
+  "air_temp": 30.2,
+  "soil_moisture": 48.5,
+  "air_humidity": 71.2,
+  "lux": 15000,
+  "quality": 0
+}

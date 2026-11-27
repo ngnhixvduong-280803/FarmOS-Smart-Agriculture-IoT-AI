@@ -1,0 +1,66 @@
+#!/bin/sh
+# Install/rotate the broker trust CA and append a least-privilege ACL for one
+# mTLS gateway. The CA private key and gateway private key never belong on VPS.
+# Usage: MQTT_GATEWAY_CA_CERT=/secure/gateway-ca.pem $0 FARM_ID GATEWAY_ID NODE_ID [NODE_ID...]
+set -eu
+
+if [ "$#" -lt 3 ]; then
+  echo "Usage: MQTT_GATEWAY_CA_CERT=/secure/gateway-ca.pem $0 FARM_ID GATEWAY_ID NODE_ID [NODE_ID...]" >&2
+  exit 64
+fi
+
+FARM_ID=$1
+GATEWAY_ID=$2
+shift 2
+
+for IDENTIFIER in "$FARM_ID" "$GATEWAY_ID" "$@"; do
+  case "$IDENTIFIER" in
+  ''|*[!A-Za-z0-9_-]*)
+    echo "Farm, gateway, and node IDs may contain only letters, digits, underscores, and hyphens." >&2
+    exit 64
+    ;;
+  esac
+done
+
+if [ -z "${MQTT_GATEWAY_CA_CERT:-}" ] || [ ! -r "$MQTT_GATEWAY_CA_CERT" ]; then
+  echo "MQTT_GATEWAY_CA_CERT must point to the public gateway CA certificate." >&2
+  exit 64
+fi
+
+MQTT_DIR=${MQTT_DIR:-/opt/farmos/mosquitto}
+COMPOSE_FILE=${COMPOSE_FILE:-/opt/farmos/docker-compose.production.yml}
+ENV_FILE=${ENV_FILE:-/opt/farmos/.env}
+ACL_FILE="$MQTT_DIR/gateway-acl"
+CERT_FILE="$MQTT_DIR/certs/gateway-ca.pem"
+
+test -f "$ACL_FILE"
+MOSQUITTO_UID="$(docker run --rm --entrypoint sh eclipse-mosquitto:2 -c 'id -u mosquitto')"
+MOSQUITTO_GID="$(docker run --rm --entrypoint sh eclipse-mosquitto:2 -c 'id -g mosquitto')"
+
+install -d -m 700 -o "$MOSQUITTO_UID" -g "$MOSQUITTO_GID" "$MQTT_DIR/certs"
+install -m 644 -o "$MOSQUITTO_UID" -g "$MOSQUITTO_GID" "$MQTT_GATEWAY_CA_CERT" "$CERT_FILE"
+
+if grep -Fqx "user $GATEWAY_ID" "$ACL_FILE"; then
+  echo "Gateway certificate identity already exists in ACL: $GATEWAY_ID" >&2
+  exit 65
+fi
+
+ACL_TEMP="$(mktemp "$MQTT_DIR/.gateway-acl.XXXXXX")"
+trap 'rm -f "$ACL_TEMP"' EXIT HUP INT TERM
+cp "$ACL_FILE" "$ACL_TEMP"
+{
+  printf '\nuser %s\n' "$GATEWAY_ID"
+  printf 'topic read farm/%s/zone/+/command\n' "$FARM_ID"
+  printf 'topic write farm/%s/node/%s/status\n' "$FARM_ID" "$GATEWAY_ID"
+  printf 'topic write farm/%s/node/%s/ack\n' "$FARM_ID" "$GATEWAY_ID"
+  for NODE_ID in "$@"; do
+    printf 'topic write farm/%s/node/%s/telemetry\n' "$FARM_ID" "$NODE_ID"
+  done
+} >> "$ACL_TEMP"
+chown "$MOSQUITTO_UID:$MOSQUITTO_GID" "$ACL_TEMP"
+chmod 640 "$ACL_TEMP"
+mv "$ACL_TEMP" "$ACL_FILE"
+trap - EXIT HUP INT TERM
+
+echo "Prepared mTLS CA and ACL for certificate CN $GATEWAY_ID."
+echo "Validate the staged config before replacing mosquitto.conf; this command does not restart the broker."

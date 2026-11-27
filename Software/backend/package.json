@@ -1,0 +1,60 @@
+{
+  "name": "farmos-backend",
+  "version": "1.0.0",
+  "description": "FarmOS AIoT Platform Backend",
+  "main": "dist/server.js",
+  "scripts": {
+    "test:onboarding": "NODE_ENV=test tsx --test src/security/*.test.ts src/manufacturing/*.test.ts src/identity/*.test.ts src/config/*.test.ts src/safety_engine/*.test.ts",
+    "dev": "dotenv -e ../.env -- tsx watch src/server.ts",
+    "build": "tsc",
+    "config:preflight": "node dist/config/preflight.js",
+    "start": "dotenv -e ../.env -- node dist/server.js",
+    "prisma:generate": "dotenv -e ../.env -- prisma generate",
+    "prisma:validate": "dotenv -e ../.env -- prisma validate",
+    "prisma:migrate": "dotenv -e ../.env -- prisma migrate dev",
+    "prisma:push": "dotenv -e ../.env -- prisma db push",
+    "prisma:studio": "dotenv -e ../.env -- prisma studio",
+    "seed": "dotenv -e ../.env -- tsx src/database/seed.ts",
+    "ota:register": "dotenv -e ../.env -- tsx src/ota/register.cli.ts",
+    "ota:register:prod": "node dist/ota/register.cli.js",
+    "mock": "tsx scripts/mock_nodes.ts"
+  },
+  "keywords": [
+    "farmos",
+    "aiot",
+    "smart-agriculture",
+    "iot",
+    "express",
+    "prisma"
+  ],
+  "author": "Lê Văn Duy",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@supabase/supabase-js": "^2.112.4",
+    "bcryptjs": "^3.0.3",
+    "busboy": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-rate-limit": "^7.5.1",
+    "jsonwebtoken": "^9.0.3",
+    "mqtt": "^5.10.1",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.0.3",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/busboy": "^1.5.4",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.9.0",
+    "@types/uuid": "^10.0.0",
+    "dotenv-cli": "^11.0.0",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

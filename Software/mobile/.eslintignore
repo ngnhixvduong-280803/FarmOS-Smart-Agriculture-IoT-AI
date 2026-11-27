@@ -1,0 +1,4 @@
+android/.cxx/
+android/app/build/
+ios/Pods/
+ios/build/

@@ -1,0 +1,10 @@
+{
+  "name": "farmos-workspace",
+  "private": true,
+  "scripts": {
+    "config:check": "node scripts/config.mjs check",
+    "config:generate": "node scripts/config.mjs generate",
+    "test:config": "node --test scripts/config.test.mjs",
+    "build": "npm run config:check && npm run config:generate && npm --prefix backend run build && npm --prefix frontend run build && npm --prefix simulator run build"
+  }
+}

@@ -1,0 +1,68 @@
+# Isolated VPS preview: never reads the production env/database/network.
+name: farmos-api-preview
+services:
+  db:
+    image: postgres:16-alpine
+    env_file: ./private.env
+    environment:
+      POSTGRES_DB: farmos_preview
+      POSTGRES_USER: farmos_preview
+    volumes:
+      - preview_db:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U farmos_preview -d farmos_preview']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  backend:
+    image: farmos-api-preview-backend:${PREVIEW_REVISION:?Set PREVIEW_REVISION}
+    env_file: ./private.env
+    environment:
+      NODE_ENV: test
+      PORT: 3000
+      FARMOS_WEB_URL: http://127.0.0.1:4080
+      FARMOS_API_URL: http://127.0.0.1:4081
+      CORS_ORIGIN: http://127.0.0.1:4080
+      ALLOW_LEGACY_PASSWORD_AUTH: 'true'
+      SESSION_COOKIE_SECURE: 'false'
+      SESSION_COOKIE_NAME: farmos-preview-session
+      IRRIGATION_CONTROL_ENABLED: 'false'
+      ENABLE_LEGACY_PROVISIONING: 'false'
+      ENABLE_LEGACY_MQTT_INGEST: 'false'
+      MQTT_BROKER_URL: mqtt://127.0.0.1:1883
+    ports:
+      - '127.0.0.1:14081:3000'
+      - '127.0.0.1:14010:4010'
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+  frontend:
+    image: farmos-api-preview-frontend:${PREVIEW_WEB_REVISION:?Set PREVIEW_WEB_REVISION}
+    ports:
+      - '127.0.0.1:14080:80'
+    depends_on:
+      - backend
+    restart: unless-stopped
+  simulator:
+    image: ${PREVIEW_SIMULATOR_IMAGE:-farmos-simulation-lab:release-a981055}
+    network_mode: service:backend
+    env_file: ./simulator.env
+    environment:
+      FARMOS_LAB_BIND: 0.0.0.0
+      FARMOS_LAB_PORT: 4010
+      FARMOS_LAB_PUBLIC_PORT: 4011
+      FARMOS_LAB_DATA_DIR: /data
+    volumes:
+      - preview_simulation:/data
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+volumes:
+  preview_db:
+  preview_simulation:

@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FarmOS · Thử cảm biến</title>
+<style>
+body{margin:0;background:#f3f6f1;color:#203428;font:16px system-ui}main{max-width:800px;margin:auto;padding:30px 18px}section{padding:20px;margin:16px 0;background:white;border:1px solid #dbe5da;border-radius:12px}h1,h2{margin-top:0}label{display:grid;gap:6px;margin:8px 0}input,button,select{font:inherit;padding:9px;border-radius:6px;border:1px solid #a8b9a9}button{background:#17623e;color:white;cursor:pointer}button:disabled{opacity:.5}.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 16px}a{color:#17623e}p{line-height:1.5}
+</style>
+<style>
+#latest dd{margin:4px 0 10px;font-size:1.65rem;font-weight:650;font-variant-numeric:tabular-nums}
+#latest pre{overflow:auto}
+[hidden]{display:none!important}
+.standalone{max-width:54rem;padding-top:clamp(20px,5vw,48px)}
+.standalone h1{font-size:clamp(1.65rem,5vw,2.45rem);letter-spacing:-.04em;margin-bottom:16px}
+.standalone section{margin:0 0 12px;padding:clamp(14px,3vw,24px)}
+.standalone h2{font-size:1.1rem;margin:0}
+.live-header,.scenario-controls{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.live-header p{margin:4px 0 0;color:#466050;font-size:.875rem}
+#toggle-live{background:#e5eee7;color:#204932;border-color:transparent}
+.standalone button:hover:not(:disabled){filter:brightness(.92)}
+.standalone :focus-visible{outline:2px solid #17623e;outline-offset:3px}
+.standalone #measurements{grid-template-columns:repeat(2,minmax(0,1fr));gap:0;margin:18px 0 12px;border-block:1px solid #dbe5da}
+.standalone #measurements>div{padding:13px 8px 11px 0}
+.standalone #measurements>div:nth-child(n+3){border-top:1px solid #dbe5da}
+.standalone dt{color:#466050;font-size:.875rem}
+.standalone #latest dd{margin:3px 0 0;font-size:clamp(1.4rem,4vw,2rem)}
+.standalone summary{cursor:pointer;color:#17623e;font-weight:600}
+.standalone #packet summary{font-size:.875rem}
+.standalone #diagnostics{font-size:.875rem}
+.standalone .scenario-controls label{flex:1 1 220px;margin:0}
+.standalone #result{margin:7px 0;font-size:.94rem}
+.standalone #error:empty{display:none}
+.weekly-table{overflow-x:auto}
+.weekly-table table{border-collapse:collapse;width:100%;font-size:.875rem;font-variant-numeric:tabular-nums}
+.weekly-table th,.weekly-table td{padding:7px 9px;text-align:left;border-bottom:1px solid #dbe5da;white-space:nowrap}
+.forecast-figure{margin:14px 0 18px}
+.forecast-plot{overflow-x:auto;background:#f7faf7;border-radius:10px}
+.forecast-plot svg{display:block;width:100%;min-width:32rem;height:auto}
+.forecast-markers{display:flex;flex-wrap:wrap;gap:8px 18px;margin:12px 0 0;padding:0;list-style:none;font-size:.875rem}
+.forecast-markers li{display:flex;align-items:baseline;gap:7px}
+.forecast-markers li::before{content:"";display:inline-block;width:14px;border-top:3px solid #177453}
+.forecast-markers .no-rain::before{border-color:#315f94;border-top-style:dashed}
+.forecast-markers .threshold::before{border-color:#986020;border-top-style:dashed}
+</style>
+<main>
+<a id="full-lab" href="/">Mô phỏng đầy đủ</a>
+<h1 id="heading">Thử cảm biến và cảnh báo</h1>
+<section id="scenario">
+<h2>Kịch bản thử</h2>
+<div class="scenario-controls">
+<label>Chọn kịch bản <select id="preset"></select></label>
+<button id="load">Bắt đầu kịch bản</button>
+<button id="next">Tiến 1 bước</button>
+<button id="day">Tiến 24 bước</button>
+</div>
+</section>
+<section id="manual">
+<h2>Chỉnh số đo cho một bước</h2>
+<form id="reading">
+<label>Thiết bị <select id="node"></select></label>
+<p>Để trống những số đo muốn giữ theo mô phỏng.</p>
+<div class="fields" id="fields"></div>
+<button>Gửi số đo thử</button>
+</form>
+</section>
+<section id="latest">
+<header class="live-header">
+<div>
+<h2>Số đo mới nhất</h2>
+<p id="connection" aria-live="polite"></p>
+<p id="live-status" hidden></p>
+</div>
+<button id="toggle-live" type="button" hidden>Tạm dừng</button>
+</header>
+<dl id="measurements" class="fields"></dl>
+<details id="packet" hidden>
+<summary>Bản tin firmware</summary>
+<p id="diagnostics"></p>
+<pre id="payload"></pre>
+</details>
+</section>
+<section>
+<h2 id="agent-title">Agent ghi nhận</h2>
+<p id="result" aria-live="polite"></p>
+<div id="agent-summary" hidden>
+<p id="agent-weather"></p>
+<p id="agent-context"></p>
+<details id="weekly-forecast" hidden>
+<summary>Dự báo độ ẩm 7 ngày</summary>
+<p id="weekly-status"></p>
+<figure id="weekly-figure" class="forecast-figure" hidden>
+<div class="forecast-plot">
+<svg id="weekly-chart" viewBox="0 0 650 250" role="img" aria-label="Độ ẩm đất theo giờ trong 7 ngày, có mưa và không mưa"></svg>
+</div>
+<figcaption>
+<ul class="forecast-markers">
+<li id="rain-marker"></li>
+<li id="dry-marker" class="no-rain"></li>
+<li id="threshold-marker" class="threshold"></li>
+</ul>
+</figcaption>
+</figure>
+<div class="weekly-table">
+<table id="weekly-table" hidden>
+<thead><tr><th scope="col">Mốc cuối ngày</th><th scope="col">Mưa</th><th scope="col">Có mưa</th><th scope="col">Không mưa</th><th scope="col">Giờ dưới ngưỡng có mưa</th></tr></thead>
+<tbody id="weekly-days"></tbody>
+</table>
+</div>
+</details>
+<details id="operation-agents" hidden>
+<summary>Sức khỏe và kế hoạch tưới</summary>
+<p id="device-health"></p>
+<p id="irrigation-schedule"></p>
+<p id="schedule-check"></p>
+<p id="irrigation-followup"></p>
+<form id="simulate-irrigation">
+<label>Lượng tưới mô phỏng (mm) <input name="mm" type="number" min="0.01" max="50" step="0.01" required></label>
+<button type="submit">Thử tưới trong mô phỏng</button>
+<p id="irrigation-feedback" role="status"></p>
+</form>
+</details>
+<details>
+<summary>Vị trí dự báo</summary>
+<form id="weather-location">
+<div class="fields">
+<label>Vĩ độ <input name="latitude" type="number" min="-90" max="90" step="any" required></label>
+<label>Kinh độ <input name="longitude" type="number" min="-180" max="180" step="any" required></label>
+</div>
+<p>Tọa độ được gửi tới Open-Meteo để lấy dự báo theo giờ.</p>
+<button type="submit">Lưu vị trí</button>
+<button type="button" id="clear-location">Xóa vị trí</button>
+</form>
+</details>
+</div>
+<a href="/notifications">Xem thông báo</a>
+<p id="error" role="alert"></p>
+</section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const fields = [
+  ['soil_moisture','Độ ẩm đất (% VWC)',0,100], ['soil_temp','Nhiệt độ đất (°C)',-55,125],
+  ['air_temp','Nhiệt độ không khí (°C)',-55,125], ['air_humidity','Độ ẩm không khí (%)',0,100],
+  ['lux','Ánh sáng (lux)',0,200000],
+];
+for (const [name,text,min,max] of fields) {
+  const label = document.createElement('label');
+  label.textContent = text;
+  const input = document.createElement('input');
+  Object.assign(input, {name, type:'number', step:'any', min, max});
+  label.append(input);
+  $('fields').append(label);
+}
+let presets = [], state, busy = false, refreshing = false, revision = 0;
+let agentReport, refreshingAgents = false, locationChanged = false, locationInitialized = false;
+let renderedWeek = '';
+function simplifyStandalone() {
+  document.querySelector('main').classList.add('standalone');
+  $('heading').textContent = 'Mô phỏng node độc lập';
+  $('heading').after($('latest'));
+  for (const id of ['full-lab', 'next', 'day']) $(id).hidden = true;
+  for (const id of ['packet', 'live-status', 'toggle-live']) $(id).hidden = false;
+  $('manual').hidden = true;
+  $('load').textContent = 'Chạy kịch bản';
+  $('load').style.alignSelf = 'end';
+}
+async function request(url, body) {
+  const response = await fetch(url, body ? {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)} : {});
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Yêu cầu thất bại.');
+  return data;
+}
+function render() {
+  const selected = $('node').value;
+  if (state.standalone) {
+    $('toggle-live').textContent = state.running ? 'Tạm dừng' : 'Chạy tiếp';
+    $('live-status').textContent = state.config.nodes[0].id + ' · ' +
+      (state.running ? 'Đang lấy mẫu mỗi ' + state.cadenceMs / 1000 + ' giây' : 'Đã tạm dừng') +
+      (state.latest.length ? ' · Mẫu #' + state.latest[0].sequence : '') +
+      (state.error ? ' · ' + state.error : '');
+  }
+  $('node').replaceChildren(...state.config.nodes.map(node => new Option(
+    state.standalone ? node.id : node.gatewayId + ' · ' + node.cropId + ' · ' + node.id, node.id)));
+  if (state.config.nodes.some(node => node.id === selected)) $('node').value = selected;
+  const advice = state.advice?.find(item => item.nodeId === $('node').value);
+  const sample = state.latest?.find(item => item.observations.nodeId === $('node').value);
+  const connected = sample?.groundTruth.nodeOnline && sample.groundTruth.gatewayOnline;
+  $('connection').hidden = state.standalone && connected;
+  const connection = sample ? (connected ? 'Đã nhận số đo' : 'Mất kết nối') : 'Chưa có số đo';
+  if ($('connection').textContent !== connection) $('connection').textContent = connection;
+  const reading = state.standalone ? state.directTelemetry?.payload : sample?.observations;
+  const measurements = state.standalone ? [
+    ['soil_moisture', 'Độ ẩm đất', '%'],
+    ['soil_temp', 'Nhiệt độ đất', '°C'],
+    ['air_temp', 'Nhiệt độ không khí', '°C'],
+    ['air_humidity', 'Độ ẩm không khí', '%'],
+  ] : fields;
+  $('diagnostics').textContent = reading && state.standalone
+    ? `ADC đất ${state.directTelemetry.adc} · Quality ${reading.quality}` : '';
+  $('payload').textContent = reading ? JSON.stringify(reading, null, 2) : 'Chưa có bản tin.';
+  $('measurements').replaceChildren(...measurements.map(([key, title, unit]) => {
+    const item = document.createElement('div');
+    const label = document.createElement('dt');
+    const value = document.createElement('dd');
+    label.textContent = title;
+    const number = reading?.[key];
+    value.textContent = connected && Number.isFinite(number)
+      ? number.toLocaleString('vi-VN', {maximumFractionDigits: 2}) + (state.standalone ? ' ' + unit : '') : '—';
+    item.append(label, value);
+    return item;
+  }));
+  const reason = advice?.reason ?? 'Chưa có số đo.';
+  $('result').textContent = state.standalone ? reason : 'Giờ mô phỏng ' + state.hour + '. ' + reason;
+  if (state.agentsEnabled) renderAgents();
+}
+function renderAgents() {
+  $('agent-summary').hidden = false;
+  $('agent-title').textContent = 'Đề xuất tưới';
+  const report = agentReport;
+  if (report?.runId === state.runId &&
+      report.eventId === (state.directTelemetry?.payload.eventId ?? null)) {
+    $('result').textContent = report.irrigation.reason;
+    const forecast = report.moisture.forecast;
+    const context = [];
+    if (forecast) context.push(`Độ ẩm dự báo sau 6 giờ mô phỏng: ${forecast.moisture.toFixed(2)}% VWC`);
+    if (report.ambient) context.push(`Điểm sương: ${report.ambient.dewPointC} °C`);
+    $('agent-context').textContent = context.join(' · ');
+    if (report.deviceHealth) renderOperations(report);
+  } else {
+    $('agent-context').textContent = '';
+  }
+  const weather = report?.weather;
+  $('agent-weather').textContent = weather?.status === 'ready'
+    ? `Open-Meteo · 24 giờ tới: mưa ${weather.rainMm24h} mm · xác suất cao nhất theo giờ ${weather.maxRainProbability}% · ET₀ ${weather.et0Mm24h} mm`
+    : ({unavailable: 'Chưa lấy được dự báo thời tiết.', unconfigured: 'Thêm vị trí để xem dự báo thời tiết.'}[weather?.status] ?? 'Đang đọc dữ liệu agent.');
+}
+function renderOperations(report) {
+  $('operation-agents').hidden = false;
+  const health = report.deviceHealth;
+  const status = {online: 'Đang nhận mẫu', offline: 'Mất kết nối', paused: 'Đã tạm dừng', stale: 'Mẫu đã cũ'}[health.status];
+  $('device-health').textContent = 'Node: ' + status + (health.lastReceivedAt === null ? '' :
+    ' · Nhận mẫu lúc ' + new Date(health.lastReceivedAt).toLocaleTimeString('vi-VN'));
+  const schedule = report.irrigationSchedule;
+  if (schedule.status === 'ready') {
+    const plan = schedule.selected;
+    const time = vietnamTime(schedule.startsAt + (plan.delayHours ?? 0) * 3600_000);
+    const option = plan.delayHours === null ? 'tiếp tục theo dõi' : `thử ${plan.mm} mm (${plan.liters} lít) lúc ${time}`;
+    $('irrigation-schedule').textContent = `Kịch bản 24 giờ: ${option}. Ước tính ${plan.dryHours} giờ dưới ngưỡng và ${plan.wetHours} giờ ẩm cao.` +
+      (schedule.rainSensitive ? ' Phương án thay đổi nếu không có mưa.' : '');
+  } else {
+    $('irrigation-schedule').textContent = {
+      weather_unavailable: 'Kế hoạch tưới cần dự báo thời tiết.',
+      soil_unavailable: 'Kế hoạch tưới cần số đo độ ẩm đất hợp lệ.',
+      pending: 'Đang tính kế hoạch tưới ban đầu.',
+    }[schedule.status];
+  }
+  if (report.forecastSchedule) renderForecastSchedule(report.forecastSchedule);
+  const followup = report.irrigationFollowup;
+  const messages = {
+    no_attempt: 'Chưa có lượt tưới mô phỏng.',
+    waiting: 'Đang chờ số đo sau tưới.',
+    insufficient: 'Thiếu cặp số đo hợp lệ trước và sau tưới.',
+    compared: `Độ ẩm trước và sau yêu cầu ${followup.requestedMm} mm: ${followup.before?.toFixed(2)} → ${followup.after?.toFixed(2)}% VWC. Chưa có số đo lưu lượng.`,
+  };
+  $('irrigation-followup').textContent = messages[followup.status];
+}
+function vietnamTime(timestamp) {
+  return new Date(timestamp).toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit',
+    minute: '2-digit', day: '2-digit', month: '2-digit'});
+}
+function drawWeeklyChart(forecast) {
+  const svg = $('weekly-chart');
+  const points = forecast.trajectory;
+  const start = points[0].at, end = points.at(-1).at;
+  const values = points.flatMap(point => [point.withRain, point.withoutRain]);
+  const min = Math.max(0, Math.floor((Math.min(forecast.threshold, ...values) - 1) / 2) * 2);
+  const max = Math.ceil((Math.max(forecast.threshold, ...values) + 1) / 2) * 2;
+  const x = time => 53 + (time - start) * 573 / (end - start);
+  const y = value => 208 - (value - min) * 174 / (max - min);
+  const elements = [];
+  function add(tag, attributes, label) {
+    const element = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, value);
+    if (label) element.textContent = label;
+    elements.push(element);
+  }
+  add('text', {x: 53, y: 20, fill: '#466050', 'font-size': 12}, 'Độ ẩm đất (% VWC)');
+  for (let tick = 0; tick <= 4; tick++) {
+    const value = min + tick * (max - min) / 4;
+    add('line', {x1: 53, x2: 626, y1: y(value), y2: y(value), stroke: '#dce7df'});
+    add('text', {x: 43, y: y(value) + 4, fill: '#466050', 'text-anchor': 'end', 'font-size': 11}, String(value));
+  }
+  const dates = new Intl.DateTimeFormat('vi-VN', {timeZone:'Asia/Ho_Chi_Minh', day:'2-digit', month:'2-digit'});
+  for (const time of [start, ...forecast.days.map(day => day.endsAt)]) {
+    add('text', {x: x(time), y: 232, fill: '#466050', 'text-anchor': 'middle', 'font-size': 11}, dates.format(time));
+  }
+  const thresholdY = y(forecast.threshold);
+  add('line', {x1: 53, x2: 626, y1: thresholdY, y2: thresholdY, stroke: '#986020', 'stroke-width': 1.5, 'stroke-dasharray': '5 5'});
+  const series = [
+    {key: 'withRain', time: forecast.firstBelowWithRain, color: '#177453', dash: '', label:'Có mưa', marker:'rain-marker'},
+    {key: 'withoutRain', time: forecast.firstBelowWithoutRain, color: '#315f94', dash: '7 4', label:'Không mưa', marker:'dry-marker'},
+  ];
+  for (const {key, time, color, dash, label, marker} of series) {
+    add('polyline', {points: points.map(point => `${x(point.at)},${y(point[key])}`).join(' '),
+      stroke: color, fill: 'none', 'stroke-width': 2.5, 'stroke-dasharray': dash, 'stroke-linejoin': 'round'});
+    const crossing = points.find(point => point.at === time);
+    if (crossing) add('circle', {cx: x(time), cy: y(crossing[key]), r: 4.5, fill: color, stroke: '#fff', 'stroke-width': 1.5});
+    $(marker).textContent = `${label} · ${time === null ? 'chưa xuống ngưỡng trong 7 ngày' : 'xem xét tưới từ ' + vietnamTime(time)}`;
+  }
+  $('threshold-marker').textContent = `Ngưỡng ${forecast.threshold.toLocaleString('vi-VN')}% VWC`;
+  svg.replaceChildren(...elements);
+}
+function renderForecastSchedule({weekly, plan24h, lastCheck}) {
+  $('weekly-forecast').hidden = false;
+  $('schedule-check').textContent = lastCheck
+    ? `Kiểm tra lúc ${vietnamTime(lastCheck.checkedAt)} · ${lastCheck.updated ? 'Đã tính lại kế hoạch' : 'Giữ kế hoạch hiện tại'}` +
+      (plan24h ? ` · Bản kế hoạch lúc ${vietnamTime(plan24h.calculatedAt)}` : '')
+    : 'Chưa có lượt kiểm tra theo lịch.';
+  const forecast = weekly?.forecast;
+  $('weekly-table').hidden = forecast?.status !== 'ready';
+  $('weekly-figure').hidden = forecast?.status !== 'ready' || !forecast.trajectory?.length;
+  if (forecast?.status !== 'ready') {
+    renderedWeek = '';
+    $('weekly-status').textContent = forecast?.status === 'weather_unavailable'
+      ? 'Chưa có đủ 7 ngày thời tiết cho tọa độ đã chọn.'
+      : 'Đang chờ mẫu độ ẩm đất hợp lệ để lập dự báo.';
+    return;
+  }
+  const key = `${weekly.sampleId}/${weekly.calculatedAt}`;
+  if (renderedWeek === key) return;
+  renderedWeek = key;
+  $('weekly-status').textContent = `Tính lúc ${vietnamTime(weekly.calculatedAt)} giờ Việt Nam. Tính lại khi điều kiện thay đổi đáng kể và vào 06:00 mỗi ngày. Hai kịch bản giả định chưa tưới, ngưỡng ${forecast.threshold}% VWC.`;
+  if (forecast.trajectory?.length) drawWeeklyChart(forecast);
+  $('weekly-days').replaceChildren(...forecast.days.map(day => {
+    const row = document.createElement('tr');
+    const values = [vietnamTime(day.endsAt), `${day.rainMm} mm`, `${day.vwcWithRain}%`, `${day.vwcWithoutRain}%`, String(day.dryHoursWithRain)];
+    for (const value of values) row.insertCell().textContent = value;
+    return row;
+  }));
+}
+async function refreshAgents() {
+  if (!state?.agentsEnabled || refreshingAgents || busy) return;
+  refreshingAgents = true;
+  const requestRevision = revision;
+  try {
+    const report = await request('/api/agents');
+    if (locationChanged || revision !== requestRevision) return;
+    agentReport = report;
+    if (!locationInitialized) {
+      const form = $('weather-location');
+      form.elements.latitude.value = report.site?.latitude ?? '';
+      form.elements.longitude.value = report.site?.longitude ?? '';
+      locationInitialized = true;
+    }
+    render();
+  } catch (error) { $('error').textContent = error.message; }
+  finally { refreshingAgents = false; }
+}
+async function run(action) {
+  revision++;
+  busy = true;
+  $('error').textContent = '';
+  document.querySelectorAll('button').forEach(button => {button.disabled = true;});
+  try { state = await action(); render(); }
+  catch (error) { $('error').textContent = error.message; }
+  finally {
+    busy = false;
+    document.querySelectorAll('button').forEach(button => {button.disabled = false;});
+  }
+}
+$('toggle-live').onclick = () => run(() => request('/api/run', {running: !state.running, cadenceMs: state.cadenceMs}));
+$('load').onclick = () => run(() => request('/api/reset', presets[Number($('preset').value)].config));
+$('next').onclick = () => run(() => request('/api/step', {count:1}));
+$('day').onclick = () => run(() => request('/api/step', {count:24}));
+$('node').onchange = () => { if (state) render(); };
+async function updateLocation(site) {
+  locationChanged = true;
+  agentReport = undefined;
+  await run(async () => {
+    const response = await fetch('/api/agents/location', {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(site),
+    });
+    const snapshot = await response.json();
+    if (!response.ok) throw new Error(snapshot.error || 'Không lưu được vị trí.');
+    const form = $('weather-location');
+    form.elements.latitude.value = site?.latitude ?? '';
+    form.elements.longitude.value = site?.longitude ?? '';
+    return snapshot;
+  });
+  locationChanged = false;
+  await refreshAgents();
+}
+$('weather-location').onsubmit = event => {
+  event.preventDefault();
+  const data = new FormData(event.currentTarget);
+  updateLocation({latitude: Number(data.get('latitude')), longitude: Number(data.get('longitude'))});
+};
+$('clear-location').onclick = () => updateLocation(null);
+$('simulate-irrigation').onsubmit = event => {
+  event.preventDefault();
+  const mm = Number(new FormData(event.currentTarget).get('mm'));
+  run(async () => {
+    const snapshot = await request('/api/actions/irrigate', {nodeId: state.config.nodes[0].id, mm});
+    $('irrigation-feedback').textContent = snapshot.running
+      ? 'Đã ghi yêu cầu tưới cho bước mô phỏng kế tiếp.' : 'Đã ghi yêu cầu. Bấm Chạy tiếp để mô phỏng tưới.';
+    return snapshot;
+  });
+};
+$('reading').onsubmit = event => {
+  event.preventDefault();
+  const values = Object.fromEntries([...new FormData(event.target)].filter(([, value]) => value !== '').map(([key, value]) => [key, Number(value)]));
+  run(() => request('/api/test-reading', {nodeId:$('node').value, values}));
+};
+run(async () => {
+  presets = await request('/api/presets');
+  $('preset').replaceChildren(...presets.map((preset,i) => new Option(preset.name, String(i))));
+  const snapshot = await request('/api/state');
+  if (snapshot.standalone) simplifyStandalone();
+  return snapshot;
+}).then(refreshAgents);
+setInterval(async () => {
+  if (!state?.standalone || busy || refreshing) return;
+  refreshing = true;
+  const requestRevision = revision;
+  try {
+    const next = await request('/api/state');
+    if (revision === requestRevision) {
+      state = next;
+      render();
+      refreshAgents();
+    }
+  }
+  catch (error) { $('error').textContent = error.message; }
+  finally { refreshing = false; }
+}, 1000);
+</script>
+</html>

@@ -1,0 +1,567 @@
+{
+  "info": {
+    "name": "FarmOS firmware API candidate",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.environment.get(\"eventId\")) pm.environment.set(\"eventId\", \"postman_\"+Date.now()+\"_\"+Math.random().toString(36).slice(2));",
+          "pm.environment.set(\"timestamp\", Math.floor(Date.now()/1000));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Device redeems finalized provisioning session",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/onboarding/devices/redeem",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "No permanent credential yet; session possession token required. V3 must be finalized. V2 disabled by default.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceId\": \"{{deviceId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"provisioningToken\": \"{{provisioningToken}}\",\n  \"firmwareVersion\": \"0.3.0\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Device heartbeat and running firmware",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/onboarding/device/status",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-farmos-device-id",
+            "value": "{{deviceId}}"
+          },
+          {
+            "key": "x-farmos-device-token",
+            "value": "{{deviceToken}}"
+          }
+        ],
+        "description": "Send about every30 seconds; TTL120 seconds. Water/relay safety fields not implemented here.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firmwareVersion\": \"0.3.0\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Compatibility heartbeat alias",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/onboarding/gateway/status",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-farmos-device-id",
+            "value": "{{deviceId}}"
+          },
+          {
+            "key": "x-farmos-device-token",
+            "value": "{{deviceToken}}"
+          }
+        ],
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firmwareVersion\": \"0.3.0\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Gateway relays sensor sample",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/onboarding/gateway/telemetry",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-farmos-device-id",
+            "value": "{{deviceId}}"
+          },
+          {
+            "key": "x-farmos-device-token",
+            "value": "{{deviceToken}}"
+          }
+        ],
+        "description": "Gateway credential + active leaf binding, or own local sensor with zone. HTTP200 dropped=true is not sensor persistence.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"timestamp\": {{timestamp}},\n  \"nodeId\": \"{{leafNodeId}}\",\n  \"soil_temp\": 26.4,\n  \"air_temp\": 30.2,\n  \"soil_moisture\": 48.5,\n  \"air_humidity\": 71.2,\n  \"lux\": 15000,\n  \"quality\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r=pm.response.json();",
+              "pm.test(\"sensor persisted, not dropped\", () => { pm.expect(r.success).to.eql(true); pm.expect(r.data.persisted).to.eql(true); pm.expect(r.data.dropped).not.to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Standalone/gateway own sensor sample",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/onboarding/device/telemetry",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-farmos-device-id",
+            "value": "{{deviceId}}"
+          },
+          {
+            "key": "x-farmos-device-token",
+            "value": "{{deviceToken}}"
+          }
+        ],
+        "description": "Direct cloud mode and assigned farm/zone required. Idempotency namespace differs from gateway relay; do not switch endpoint during retries.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"timestamp\": {{timestamp}},\n  \"soil_temp\": 26.4,\n  \"air_temp\": 30.2,\n  \"soil_moisture\": 48.5,\n  \"air_humidity\": 71.2,\n  \"lux\": 15000,\n  \"quality\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r=pm.response.json();",
+              "pm.test(\"sensor persisted, not dropped\", () => { pm.expect(r.success).to.eql(true); pm.expect(r.data.persisted).to.eql(true); pm.expect(r.data.dropped).not.to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Gateway polls pending pairing",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/onboarding/gateway/pairing-sessions/next",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-farmos-device-id",
+            "value": "{{deviceId}}"
+          },
+          {
+            "key": "x-farmos-device-token",
+            "value": "{{deviceToken}}"
+          }
+        ],
+        "description": "data=null or pairingId/nodeId/radioToken/ttlMs/expiresAt; polling advances PENDING to GATEWAY_READY."
+      }
+    },
+    {
+      "name": "Confirm verified LoRa pairing",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/onboarding/gateway/pairing-sessions/{{id}}/confirm",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-farmos-device-id",
+            "value": "{{deviceId}}"
+          },
+          {
+            "key": "x-farmos-device-token",
+            "value": "{{deviceToken}}"
+          }
+        ],
+        "description": "Only after authenticated radio handshake and valid sensor frame. Revokes old bindings.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"radioToken\": \"{{radioToken}}\",\n  \"rssi\": -70,\n  \"snr\": 7\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Poll lifecycle command",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/onboarding/device-commands/next",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-farmos-device-id",
+            "value": "{{deviceId}}"
+          },
+          {
+            "key": "x-farmos-device-token",
+            "value": "{{deviceToken}}"
+          }
+        ],
+        "description": "data=null or commandId/type/expiresAt. RELEASE_ACCOUNT is not irrigation."
+      }
+    },
+    {
+      "name": "Lifecycle command ack",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/onboarding/device-commands/{{id}}/ack",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-farmos-device-id",
+            "value": "{{deviceId}}"
+          },
+          {
+            "key": "x-farmos-device-token",
+            "value": "{{deviceToken}}"
+          }
+        ],
+        "description": "Command scoped to credential; applied requires acknowledged unexpired RELEASE_ACCOUNT and revokes credential.",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Lifecycle command applied",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/onboarding/device-commands/{{id}}/applied",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-farmos-device-id",
+            "value": "{{deviceId}}"
+          },
+          {
+            "key": "x-farmos-device-token",
+            "value": "{{deviceToken}}"
+          }
+        ],
+        "description": "Command scoped to credential; applied requires acknowledged unexpired RELEASE_ACCOUNT and revokes credential.",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "App resolves signed QRv3",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/onboarding/qr/resolve",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "Public metadata only; not claim authorization.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"payload\": {{qrPayload}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "App creates challenge session",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/onboarding/qr/claim-sessions",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mobileToken}}"
+          }
+        ],
+        "description": "Requires existing released factory identity, farm access and signed QR. Response sessionId/deviceId/challenge/provisioningToken/nonce/identityVersion/expiresAt/status; send challenge to BLE board.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"payload\": {{qrPayload}},\n  \"farmId\": \"{{farmId}}\",\n  \"zoneId\": \"{{zoneId}}\",\n  \"deploymentMode\": \"{{deploymentMode}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "App polls claim",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/onboarding/qr/claim-sessions/{{id}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mobileToken}}"
+          }
+        ],
+        "description": ""
+      }
+    },
+    {
+      "name": "App submits board signature",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/onboarding/qr/claim-sessions/{{id}}/attest",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mobileToken}}"
+          }
+        ],
+        "description": "DER P-256 SHA256 signature encoded base64url, transcript in CONTRACT.md and vector.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"signature\": \"{{signature}}\",\n  \"provisioningToken\": \"{{provisioningToken}}\",\n  \"nonce\": \"{{nonce}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "App finalizes attested claim",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/onboarding/qr/claim-sessions/{{id}}/finalize",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mobileToken}}"
+          }
+        ],
+        "description": "Response includes provisioning for cloud mode or pairing for leaf. Board must redeem or confirm before declaring transport ready.",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "App polls pairing",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/onboarding/pairing-sessions/{{id}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{mobileToken}}"
+          }
+        ],
+        "description": ""
+      }
+    },
+    {
+      "name": "Check compatible OTA release",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/ota/check?deviceType={{deviceType}}&currentVersion={{currentVersion}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-farmos-device-id",
+            "value": "{{deviceId}}"
+          },
+          {
+            "key": "x-farmos-device-token",
+            "value": "{{deviceToken}}"
+          }
+        ],
+        "description": "Credential scopes deviceId. updateAvailable=false or latestRelease/jobId/downloadUrl; download URL contains short-lived ticket."
+      }
+    },
+    {
+      "name": "Report device OTA state",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/ota/status",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-farmos-device-id",
+            "value": "{{deviceId}}"
+          },
+          {
+            "key": "x-farmos-device-token",
+            "value": "{{deviceToken}}"
+          }
+        ],
+        "description": "Use jobId from check. BOOT_CONFIRMED only from credential of rebooted device; leaf BLE proof contract unresolved.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deviceId\": \"{{deviceId}}\",\n  \"deviceType\": \"{{deviceType}}\",\n  \"targetVersion\": \"{{version}}\",\n  \"jobId\": \"{{jobId}}\",\n  \"status\": \"DOWNLOADING\",\n  \"progress\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Read own OTA audit",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/ota/events?deviceId={{deviceId}}&limit={{limit}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-farmos-device-id",
+            "value": "{{deviceId}}"
+          },
+          {
+            "key": "x-farmos-device-token",
+            "value": "{{deviceToken}}"
+          }
+        ],
+        "description": ""
+      }
+    },
+    {
+      "name": "Download signed-ticket OTA binary",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/ota/download/{{deviceType}}/{{version}}?ticket={{ticket}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-farmos-device-id",
+            "value": "{{deviceId}}"
+          },
+          {
+            "key": "x-farmos-device-token",
+            "value": "{{deviceToken}}"
+          }
+        ],
+        "description": "Use downloadUrl from check unchanged, plus device auth. Verify SHA256/target/project/version, write inactive partition."
+      }
+    }
+  ]
+}

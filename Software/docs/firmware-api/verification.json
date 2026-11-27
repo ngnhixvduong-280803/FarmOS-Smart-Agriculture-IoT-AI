@@ -1,0 +1,225 @@
+{
+  "generatedAt": "2026-10-18T07:32:08.815Z",
+  "scope": "isolated VPS preview, API loopback, no Internet/LoRa/hardware proof",
+  "sourceRevision": "a981055",
+  "checks": [
+    "gateway relay persisted and DB values match",
+    "duplicate replay accepted without extra row",
+    "missing credential rejected",
+    "wrong credential rejected",
+    "unknown pH field rejected",
+    "null sensor rejected",
+    "standalone direct sample persisted",
+    "device heartbeat accepted",
+    "/api/v1/onboarding/device-commands/next reachable with device credential",
+    "/api/v1/onboarding/gateway/pairing-sessions/next reachable with device credential",
+    "/api/v1/ota/check?deviceType=GATEWAY&currentVersion=0.3.0 reachable with device credential",
+    "revoked leaf is ACKed dropped, no sensor row",
+    "revoked device credential rejected",
+    "synthetic samples remain isolated from physical telemetry",
+    "four SIM devices visible in normal device list with saved sample metadata"
+  ],
+  "scenarios": [
+    {
+      "name": "Khô hạn 7 ngày",
+      "runId": "f4285ba8-a9d1-42eb-8ae8-083f9dde6ca9",
+      "generated": 507,
+      "uploaded": 9,
+      "dbRows": 9,
+      "gatewayOfflineFrames": 0,
+      "coverage": "representative baseline, event and final/recovery frames; not all generated frames uploaded",
+      "sampleIds": [
+        "4e949f12-0ee3-42d3-8c23-05787a3b8691",
+        "6f92d1ac-9fd2-45fc-8aa1-7ecfe4e0fb97",
+        "b889c448-055e-4bcd-8653-cc8a4c2f248e",
+        "7ebb6795-14a6-4df1-aebe-1901fab04446",
+        "2fd5d362-ec33-4ccf-be44-febe9c1dbb87",
+        "2806367a-b23c-4f74-9f5e-b205c8c0be01",
+        "e5a6fc9f-9a5b-4476-ac87-1a1dc9078287",
+        "75eac49d-d84c-4272-833e-fa03af97dc20",
+        "40d25519-674e-4a80-b577-9221522bf54f"
+      ]
+    },
+    {
+      "name": "Lỗi cảm biến và mất mạng gateway",
+      "runId": "28f7074e-c865-4d56-9698-df0dbddc4c0c",
+      "generated": 504,
+      "uploaded": 9,
+      "dbRows": 9,
+      "gatewayOfflineFrames": 24,
+      "coverage": "representative baseline, event and final/recovery frames; not all generated frames uploaded",
+      "sampleIds": [
+        "e36fd851-8123-4443-be92-f6d88b7d4096",
+        "4e099f5b-7b0d-402b-8e19-f214d3bc0604",
+        "3f0f5089-df1e-4ac5-8149-b014aa7dcc77",
+        "a7d6b8c5-adcb-4707-9aaf-b39ec2dc8704",
+        "2886cb32-e414-42db-996f-dd17636979e4",
+        "7a647424-58fe-477d-b98b-c5a4e1819bf7",
+        "f61fa116-abcd-4f00-a94c-c27685f143a3",
+        "7adbb912-6d12-4420-a7f4-28dd5dce4a57",
+        "ebc3193b-63f6-4b45-8eef-7e0f3adb5e58"
+      ]
+    },
+    {
+      "name": "Mưa lớn và thoát nước chậm",
+      "runId": "734705e9-19b5-4de0-ba63-01cf97902b05",
+      "generated": 504,
+      "uploaded": 9,
+      "dbRows": 9,
+      "gatewayOfflineFrames": 0,
+      "coverage": "representative baseline, event and final/recovery frames; not all generated frames uploaded",
+      "sampleIds": [
+        "2e867eb5-232a-464d-bec9-a4767c4cb375",
+        "ee2e167b-b530-4a2b-b735-b861283916a9",
+        "431a9d72-18d9-4748-a7ca-c5ce6ba60c22",
+        "cf86b34a-5256-411c-9f50-6993ffdd3be6",
+        "87a4b70e-8301-44c1-aca6-d7487ff6e016",
+        "ce5c5636-243f-46f1-96d4-6d9b3b833396",
+        "c0c3ba6b-ee43-4032-8e9d-7427294ce0a0",
+        "802b4a27-fc93-48ad-98ec-f4a63089d3f8",
+        "d8529ce7-d1b2-437f-9df4-0772b0979056"
+      ]
+    },
+    {
+      "name": "Đất chua/mặn và cải tạo pH giả định",
+      "runId": "af62627e-8a23-4163-909d-98d1ed3fb633",
+      "generated": 504,
+      "uploaded": 9,
+      "dbRows": 9,
+      "gatewayOfflineFrames": 0,
+      "coverage": "representative baseline, event and final/recovery frames; not all generated frames uploaded",
+      "sampleIds": [
+        "5944d88b-61f4-45a4-9725-7e47de5fbad9",
+        "9a1210bc-48ff-4abd-9baa-d732c98a9820",
+        "0d97dfa8-2888-4132-90dc-7ddd71383088",
+        "9ccae34a-d011-46ce-ab10-887125a11d66",
+        "96b28686-9b6e-4c4e-ad98-b88e8f0faee6",
+        "d3391a51-bec3-47a9-acad-055ae5766854",
+        "22411992-2fdb-4c86-82a2-9d08d72b49b5",
+        "51c9db10-1907-45cf-abb7-a9bb33eeb5de",
+        "96b841fc-73cc-4bcf-a505-f21e09eae3c9"
+      ]
+    }
+  ],
+  "latency": {
+    "gatewayTelemetry": {
+      "n": 60,
+      "minMs": 22.75,
+      "p50Ms": 32.98,
+      "p95Ms": 40.34,
+      "p99Ms": 51.82,
+      "maxMs": 51.82
+    },
+    "dbReadback": {
+      "n": 60,
+      "minMs": 1.93,
+      "p50Ms": 2.66,
+      "p95Ms": 4.61,
+      "p99Ms": 17.67,
+      "maxMs": 17.67
+    },
+    "workload": {
+      "requests": 60,
+      "targetRps": 2,
+      "elapsedSec": 30.01,
+      "errors": 0,
+      "concurrency": 1
+    },
+    "deviceList": {
+      "n": 10,
+      "minMs": 19.93,
+      "p50Ms": 24.25,
+      "p95Ms": 92.43,
+      "p99Ms": 92.43,
+      "maxMs": 92.43
+    },
+    "sshTunnelSimulation": {
+      "path": "Mac → SSH tunnel → isolated VPS authenticated simulation API",
+      "n": 12,
+      "runId": "4962c122-e10a-40ed-9dc7-7df99d55a9b4",
+      "p50Ms": 232.21,
+      "p95Ms": 366.32,
+      "maxMs": 366.32,
+      "errors": 0
+    }
+  },
+  "realtime": {
+    "sourceRevision": "4fd7cb5",
+    "path": "Mac → SSH → VPS direct-device HTTP ingest → authenticated Socket.IO farm room → Mac",
+    "samples": 1,
+    "observedMs": 160.84,
+    "allFiveSensorFields": true,
+    "telemetryId": "99a43618-f511-4fb0-9a5c-9b067fb6338f"
+  },
+  "outboxRecovery": {
+    "runId": "769e8e69-564f-4384-b044-b8f272edd79d",
+    "offlineHoldMs": 2500,
+    "queuedWhileOffline": 3,
+    "ackedAfterRecovery": 6,
+    "remaining": 0,
+    "receipts": {
+      "SIM_NODE_01": {
+        "eventId": "769e8e69-564f-4384-b044-b8f272edd79d_2_SIM_NODE_01",
+        "sampleId": "173c664d-dad0-4b61-97ba-69f3062e8c89"
+      },
+      "SIM_NODE_02": {
+        "eventId": "769e8e69-564f-4384-b044-b8f272edd79d_2_SIM_NODE_02",
+        "sampleId": "6e07337e-4fd8-4c41-bd9a-9b2be898dc55"
+      },
+      "SIM_NODE_03": {
+        "eventId": "769e8e69-564f-4384-b044-b8f272edd79d_2_SIM_NODE_03",
+        "sampleId": "8e5dd93b-7de3-4f5e-9dea-811777066ea4"
+      }
+    }
+  },
+  "concurrency": {
+    "runId": "dac58ae1-5479-4b65-938e-df89d0be8638",
+    "uniqueFrames": 12,
+    "concurrency": 3,
+    "attempts": 12,
+    "retries503": 0,
+    "finalAcknowledged": 12,
+    "elapsedMs": 2174.56,
+    "interpretation": "Bounded burst;503 retried with unchanged eventId. Not a fleet-capacity stress test."
+  },
+  "runtimeRevision": "4fd7cb5",
+  "uiProof": {
+    "sourceRevision": "4fd7cb5",
+    "sampleId": "95bfbc27-b182-48ed-8952-813a54c3bef2",
+    "eventId": "49e3eefb-2ee7-4bbf-8a7a-847063fe49e9_1_SIM_NODE_01",
+    "displayed": "41.23% VWC",
+    "observedFromRequestMs": 8046,
+    "observedAfterAckMs": 7633,
+    "method": "One sample, open device detail, 5-second polling; observation includes tool scheduling delay, not precise browser render latency"
+  },
+  "temperatureOnly": {
+    "deviceId": "NODE_4294900002",
+    "telemetryId": "ee781a70-b53f-48dd-98dc-67bfe48a5acc",
+    "soil_temp": 27.12,
+    "soil_moisture": null,
+    "browserVerified": true,
+    "frontendRevision": "257c91b"
+  },
+  "runtimeBackendRevision": "4fd7cb5",
+  "runtimeFrontendRevision": "257c91b",
+  "validation": {
+    "backendRegressionTests": 73,
+    "openApiValidation": "passed @apidevtools/swagger-cli 4.0.4",
+    "attestationVector": "verified against backend attestationMessage",
+    "telemetryExample": "verified against backend Zod schema",
+    "frontendBuild": "passed TypeScript and Vite, includes nullable sensor UI",
+    "productionMerge": "blocked by required PR review"
+  },
+  "runtimeSimulatorRevision": "3aea412",
+  "runtimeSnapshot": {
+    "at": "2026-10-18T07:43:37.753Z",
+    "syntheticSamples": 217,
+    "syntheticRunCount": 11,
+    "syntheticDevices": 4,
+    "firmwareFixtureTelemetry": 64,
+    "physicalRowsForSimDevices": 0,
+    "outboxRecoveryRows": 6,
+    "concurrencyRows": 12,
+    "note": "Point-in-time counts; live preview continues adding synthetic samples."
+  }
+}

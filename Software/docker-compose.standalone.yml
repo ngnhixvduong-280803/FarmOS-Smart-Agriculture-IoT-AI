@@ -1,0 +1,29 @@
+name: farmos-standalone
+services:
+  simulator:
+    build: ./simulator
+    image: ${FARMOS_STANDALONE_IMAGE:-farmos-standalone:local}
+    command: ["node", "dist/lab/server.js", "--standalone", "--container"]
+    restart: unless-stopped
+    init: true
+    env_file:
+      - path: ${FARMOS_STANDALONE_ENV_FILE:-./simulator/.env.standalone-cloud}
+        required: false
+    environment:
+      FARMOS_LAB_PUBLIC_PORT: ${FARMOS_STANDALONE_PUBLIC_PORT:-4010}
+    ports:
+      - "127.0.0.1:${FARMOS_STANDALONE_PUBLIC_PORT:-4010}:4010"
+    volumes:
+      - standalone_data:/data
+    mem_limit: 512m
+    cpus: 0.5
+    pids_limit: 128
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+volumes:
+  standalone_data:

@@ -1,0 +1,31 @@
+# Root Docker context is used only by the backend image. Never send secrets or
+# generated dependency/build trees to the daemon or CI builder.
+**/.env
+**/.env.*
+**/node_modules
+**/dist
+**/build
+**/coverage
+**/.cache
+**/.git
+**/.DS_Store
+**/build/**
+**/coverage/**
+**/.cache/**
+**/*.bin
+**/*.elf
+**/*.hex
+**/*.map
+**/*.uf2
+**/*.img
+**/*.zip
+backend/storage
+backend/storage/**
+
+# The backend image needs this immutable metadata file only. Firmware source
+# and generated binaries stay out of the Docker context; the Dockerfile's
+# explicit COPY re-includes this file.
+firmware/*
+!firmware/flash_layout.json
+mobile/ios/Pods
+mobile/android/.gradle

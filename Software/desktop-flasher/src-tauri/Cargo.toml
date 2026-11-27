@@ -1,0 +1,27 @@
+[package]
+name = "farmos-desktop-flasher"
+version = "0.1.0"
+description = "FarmOS Flasher with a bundled native ESP32 toolchain"
+authors = ["FarmOS"]
+edition = "2021"
+
+[lib]
+name = "farmos_desktop_flasher_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "rustls-tls"] }
+crc32fast = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serialport = { version = "4", default-features = false }
+sha2 = "0.10"
+tauri = { version = "2", features = [] }
+tauri-plugin-deep-link = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+url = "2"
+keyring = { version = "=3.6.3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }

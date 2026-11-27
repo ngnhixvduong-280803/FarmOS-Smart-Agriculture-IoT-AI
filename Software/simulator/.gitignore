@@ -1,0 +1,8 @@
+# Local simulator delivery state and gateway certificates. Templates only belong in Git.
+.gateway-simulator-outbox.json
+.gateway-simulator-outbox.json.*
+certs/
+
+# Local agronomy lab datasets and gateway secrets
+.lab/
+.env.lab

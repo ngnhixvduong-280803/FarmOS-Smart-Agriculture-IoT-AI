@@ -1,0 +1,35 @@
+{
+  "protocol": "farmos-ble-provision-v3",
+  "signatureFormat": "transcript-v1",
+  "canonicalTranscript": {
+    "domain": "farmos-ble-provision-v3",
+    "lengthPrefix": "u32 big-endian before every string/byte field",
+    "fields": ["domain", "deviceId", "sessionId", "sha256(UTF-8 provisioningToken)", "nonce bytes", "identityVersion as u32 big-endian"],
+    "transcriptDigest": "SHA-256 of the concatenated fields"
+  },
+  "challengeRequest": {
+    "op": "CHALLENGE",
+    "deviceId": "NODE_000007",
+    "sessionId": "claim-session-7",
+    "provisioningToken": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "nonce": "AAECAwQFBgcICQoLDA0ODw",
+    "ttlMs": 300000
+  },
+  "backendAttest": {
+    "signatureField": "signature",
+    "verificationMessage": "attestationMessage({ deviceId, sessionId, provisioningToken: session.challenge, nonce, identityVersion })",
+    "verificationAlgorithm": "ECDSA-P256-SHA256",
+    "verificationInput": "Node verify(\"sha256\", transcriptDigest, publicKey, signature)"
+  },
+  "vector": {
+    "deviceId": "NODE_000007",
+    "sessionId": "claim-session-7",
+    "provisioningToken": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "nonce": "AAECAwQFBgcICQoLDA0ODw",
+    "identityVersion": 3,
+    "transcriptDigest": "293e753cc7c2bb7f06cd095b99ae3b629900bd9cfeaed14867c01c51c822810e",
+    "publicKeySpki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE3dOMnfl8i/d0smf2TrgXkIIBh6535P32bPbiOJ5knydo28SeWrJjV715E02PnRkJ4rnLXBq6HeqZ3vfBd0mZNg==",
+    "publicKeyFingerprint": "e05bd178850a432f4b34f153c096b6616b4a817721fbbfe251b1d856e3eaeed6",
+    "signature": "MEUCIHyY65djjbm2h-Mpagj-hUrmlIVCP4UMyGNONQcYW0RJAiEA7trUi4jZ_oX5wVF9TgD3blWYC4R0ncS5fD5QeBxY6ds"
+  }
+}

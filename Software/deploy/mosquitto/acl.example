@@ -1,0 +1,21 @@
+# Create /opt/farmos/mosquitto/acl from this file and replace each example user
+# with a unique, non-human credential. Do not grant '#' or '+/#' to gateways.
+
+user farmos-backend
+topic read farm/+/node/+/telemetry
+topic read farm/+/node/+/status
+topic read farm/+/node/+/ack
+topic write farm/+/zone/+/command
+
+# Example: a gateway may read only its farm's commands and write only status/ACK
+# for itself plus telemetry from the sensor nodes physically assigned to it.
+# Copy the block with a unique username per gateway and enumerate every assigned
+# sensor node. Do not use a `+` wildcard for node IDs: it would let one gateway
+# impersonate another node in the same farm.
+# user gateway-f01-01
+# topic read farm/F01/zone/+/command
+# topic write farm/F01/node/GATEWAY_01/status
+# topic write farm/F01/node/GATEWAY_01/ack
+# topic write farm/F01/node/NODE_Z01_01/telemetry
+# topic write farm/F01/node/NODE_Z02_01/telemetry
+# topic write farm/F01/node/NODE_Z03_01/telemetry

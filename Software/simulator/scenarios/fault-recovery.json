@@ -1,0 +1,96 @@
+{
+  "name": "Lỗi cảm biến và mất mạng gateway",
+  "config": {
+    "seed": 42,
+    "startAt": "2026-10-01T00:00:00.000Z",
+    "stepMinutes": 60,
+    "weather": {
+      "meanC": 28,
+      "amplitudeC": 6,
+      "humidityPct": 70,
+      "peakLux": 50000,
+      "et0MmDay": 4.5
+    },
+    "nodes": [
+      {
+        "id": "SIM_NODE_01",
+        "gatewayId": "SIM_GATEWAY_01",
+        "zoneId": "SIM_ZONE_A",
+        "cropId": "mustard-greens",
+        "soilId": "silt",
+        "ageDays": 18,
+        "areaM2": 100,
+        "initialVwc": 0.29,
+        "ph": 6.2,
+        "ec": 1,
+        "organicPct": 2
+      },
+      {
+        "id": "SIM_NODE_02",
+        "gatewayId": "SIM_GATEWAY_01",
+        "zoneId": "SIM_ZONE_B",
+        "cropId": "chilli",
+        "soilId": "loamy-sand",
+        "ageDays": 45,
+        "areaM2": 50,
+        "initialVwc": 0.14,
+        "ph": 6.5,
+        "ec": 0.8,
+        "organicPct": 1.5
+      },
+      {
+        "id": "SIM_NODE_03",
+        "gatewayId": "SIM_GATEWAY_01",
+        "zoneId": "SIM_ZONE_C",
+        "cropId": "tomato",
+        "soilId": "silt",
+        "ageDays": 45,
+        "areaM2": 100,
+        "initialVwc": 0.29,
+        "ph": 6.2,
+        "ec": 1,
+        "organicPct": 2
+      }
+    ],
+    "events": [
+      {
+        "id": "bias",
+        "kind": "sensor_bias",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 12,
+        "durationHours": 12,
+        "value": -12
+      },
+      {
+        "id": "stuck",
+        "kind": "sensor_stuck",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 24,
+        "durationHours": 24,
+        "value": 0
+      },
+      {
+        "id": "offline",
+        "kind": "gateway_offline",
+        "atHour": 48,
+        "durationHours": 8,
+        "value": 0
+      },
+      {
+        "id": "irrigation",
+        "kind": "irrigation",
+        "atHour": 60,
+        "durationHours": 2,
+        "value": 12
+      },
+      {
+        "id": "noflow",
+        "kind": "no_flow",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 60,
+        "durationHours": 2,
+        "value": 0
+      }
+    ]
+  }
+}

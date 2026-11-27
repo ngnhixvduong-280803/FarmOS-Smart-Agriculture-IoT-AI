@@ -1,0 +1,55 @@
+// VisionCamera 4.x publishes its Prefab package from the native build output.
+// AGP 9 can schedule prefab<Variant>ConfigurePackage before that output exists,
+// which leaves the app's ExternalNativeJsonGenerator pointing at a missing
+// intermediates/prefab_package/<variant>/prefab directory. Keep this workaround
+// in the app instead of editing node_modules so a fresh install is reproducible.
+
+tasks.configureEach { task ->
+    def prefabConfigurePattern = ~/^prefab(.+)ConfigurePackage$/
+    def matcher = task.name =~ prefabConfigurePattern
+    if (matcher.matches()) {
+        def variantName = matcher[0][1]
+        task.outputs.upToDateWhen { false }
+        task.dependsOn("externalNativeBuild${variantName}")
+    }
+}
+
+// The app's native JSON generator caches the Prefab package paths. Touch those
+// config files after the library's native build so AGP reruns Prefab staging
+// when a clean or variant-specific build regenerates the .so files.
+afterEvaluate {
+    def abis = reactNativeArchitectures()
+    rootProject.allprojects.each { proj ->
+        if (proj === rootProject) return
+
+        def dependsOnThisLib = proj.configurations.findAll { config ->
+            config.canBeResolved
+        }.any { config ->
+            config.dependencies.any { dep ->
+                dep.group == project.group && dep.name == project.name
+            }
+        }
+        if (!dependsOnThisLib && proj != project) return
+
+        if (!proj.plugins.hasPlugin('com.android.application') && !proj.plugins.hasPlugin('com.android.library')) {
+            return
+        }
+
+        def variants = proj.android.hasProperty('applicationVariants') ? proj.android.applicationVariants : proj.android.libraryVariants
+        variants.all { variant ->
+            def variantName = variant.name
+            abis.each { abi ->
+                def searchDir = new File(proj.projectDir, ".cxx/${variantName}")
+                if (!searchDir.exists()) return
+                def matches = []
+                searchDir.eachDir { randomDir ->
+                    def prefabConfig = new File(randomDir, "${abi}/prefab_config.json")
+                    if (prefabConfig.exists()) matches << prefabConfig
+                }
+                matches.each { prefabConfig ->
+                    prefabConfig.setLastModified(System.currentTimeMillis())
+                }
+            }
+        }
+    }
+}

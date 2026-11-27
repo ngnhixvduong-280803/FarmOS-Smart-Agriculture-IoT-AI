@@ -1,0 +1,34 @@
+{
+  "name": "farmos-gateway-simulator",
+  "version": "1.0.0",
+  "description": "Standalone Gateway and 3-Node AIoT Multi-Protocol Simulator for FarmOS",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "dotenv -e ../.env -- tsx src/index.ts",
+    "dev": "dotenv -e ../.env -- tsx watch src/index.ts",
+    "build": "tsc && node scripts/copy-assets.cjs",
+    "lab": "tsx src/lab/server.ts",
+    "lab:standalone": "tsx src/lab/server.ts --standalone",
+    "test:lab": "tsx --test src/lab/*.test.ts"
+  },
+  "keywords": [
+    "farmos",
+    "gateway",
+    "simulator",
+    "iot",
+    "mqtt",
+    "rest-api"
+  ],
+  "author": "FarmOS Team",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "mqtt": "^5.10.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "dotenv-cli": "^11.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

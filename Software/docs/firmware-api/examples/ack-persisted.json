@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "data": {
+    "persisted": true,
+    "duplicate": false,
+    "telemetryId": "example-row-id"
+  }
+}

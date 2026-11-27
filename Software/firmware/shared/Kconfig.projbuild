@@ -1,0 +1,36 @@
+menu "FarmOS identity"
+config FARMOS_FACTORY_PLAIN_FLASH
+    bool "Use plain flash for USB factory enrollment"
+    default n
+    depends on !NVS_ENCRYPTION && !SECURE_BOOT && !SECURE_FLASH_ENC_ENABLED
+    help
+        Dedicated USB factory profile. Requires genuine signed enrollment;
+        does not allow development identities or legacy claim bypasses.
+        Local flash remains readable; OTA still requires signed applications.
+
+config FARMOS_DEVELOPMENT_IDENTITY
+    bool "Allow development identity when factory partition is absent"
+    default n
+    help
+        Enable only for an explicitly requested bench image. Manufactured
+        devices must have their own factory identity and attestation key.
+endmenu
+
+menu "FarmOS serial enrollment"
+config FARMOS_ENROLLMENT_USB_SERIAL_JTAG
+    bool "Use native USB Serial/JTAG for enrollment"
+    depends on SOC_USB_SERIAL_JTAG_SUPPORTED
+    default n
+    help
+        Use the ESP32-S3 native USB connector for the desktop flasher protocol.
+        Disable for boards connected through an external UART0 USB bridge.
+
+config FARMOS_ENROLLMENT_SERVER_PUBLIC_KEY
+    string "Enrollment server public key (base64url SPKI DER)"
+    default ""
+    help
+        The public key embedded in the firmware verifies short-lived signed
+        enrollment/recovery tickets received over physical UART. Never put a
+        server private key in firmware or in this repository. Production
+        release profiles must override this value with the approved key.
+endmenu

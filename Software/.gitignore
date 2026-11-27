@@ -1,0 +1,70 @@
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Environment Variables
+.env
+.env.local
+.env.production
+
+# Generated non-secret config contract (recreated by npm run config:generate)
+config/generated/*
+!config/generated/.gitkeep
+
+# Node / JavaScript
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+.next/
+.wrangler/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Flutter / Dart / Mobile
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+ios/Flutter/Generated.xcconfig
+android/.gradle
+android/app/build/
+
+# PlatformIO / Firmware
+.pio/
+.pioenvs/
+.piolibdeps/
+.clangd/
+firmware/**/managed_components/
+firmware/**/sdkconfig.*
+!firmware/**/sdkconfig.defaults
+!firmware/**/sdkconfig.defaults.*
+firmware/**/keys/
+
+# Database data
+postgres_data/
+mosquitto_data/
+mosquitto_log/
+backend/storage/firmware/*
+!backend/storage/firmware/.gitkeep
+
+# Local production-recovery bundles. These can contain credentials, MQTT certificates,
+# and other secrets copied from a VPS; they must never be committed.
+.local-backups/
+farmos-enrollment-private.pem
+simulator/.lab-standalone/
+simulator/.env.standalone-cloud
+simulator/.env.standalone-cloud.pending

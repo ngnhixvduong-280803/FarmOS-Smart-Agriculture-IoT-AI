@@ -1,0 +1,72 @@
+{
+  "protocolVersion": 1,
+  "hardwareProof": {
+    "chipFamily": "ESP32-S3",
+    "efuseMac": "14:c1:9f:46:ab:30",
+    "nonce": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYX",
+    "proof": "04cc89b8c7ee187100487d7ec08deb9f8419776e34eb29bac11ecdb73aec58f0"
+  },
+  "ticketPayload": {
+    "deviceId": "NODE_000007",
+    "firmwareTarget": "ESP32S3_LORA_SENSOR_V1",
+    "generation": 1,
+    "hardwareProof": "04cc89b8c7ee187100487d7ec08deb9f8419776e34eb29bac11ecdb73aec58f0",
+    "hardwareRevision": "REV_A",
+    "identityVersion": 3,
+    "model": "NODE_V1",
+    "nonce": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYX",
+    "operation": "ENROLL",
+    "physicalSerial": true,
+    "protocolVersion": 1,
+    "publicKeyFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "radioId": 7,
+    "role": "NODE",
+    "serial": "SN-VECTOR-000007",
+    "ticketId": "ticket-vector-001",
+    "ttlMs": 120000
+  },
+  "ticketPayloadBase64": "eyJkZXZpY2VJZCI6Ik5PREVfMDAwMDA3IiwiZmlybXdhcmVUYXJnZXQiOiJFU1AzMlMzX0xPUkFfU0VOU09SX1YxIiwiZ2VuZXJhdGlvbiI6MSwiaGFyZHdhcmVQcm9vZiI6IjA0Y2M4OWI4YzdlZTE4NzEwMDQ4N2Q3ZWMwOGRlYjlmODQxOTc3NmUzNGViMjliYWMxMWVjZGI3M2FlYzU4ZjAiLCJoYXJkd2FyZVJldmlzaW9uIjoiUkVWX0EiLCJpZGVudGl0eVZlcnNpb24iOjMsIm1vZGVsIjoiTk9ERV9WMSIsIm5vbmNlIjoiQUFFQ0F3UUZCZ2NJQ1FvTERBME9EeEFSRWhNVUZSWVgiLCJvcGVyYXRpb24iOiJFTlJPTEwiLCJwaHlzaWNhbFNlcmlhbCI6dHJ1ZSwicHJvdG9jb2xWZXJzaW9uIjoxLCJwdWJsaWNLZXlGaW5nZXJwcmludCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJyYWRpb0lkIjo3LCJyb2xlIjoiTk9ERSIsInNlcmlhbCI6IlNOLVZFQ1RPUi0wMDAwMDciLCJ0aWNrZXRJZCI6InRpY2tldC12ZWN0b3ItMDAxIiwidHRsTXMiOjEyMDAwMH0",
+  "ticketPayloadSha256": "80fad582fa6ef6102fcf6badd1e0a354b0b2d538697d9d168211937dbd3857a4",
+  "reflashIdentity": {
+    "identityVersion": 3,
+    "keyGeneration": 7,
+    "deviceId": "NODE_000007",
+    "serial": "SN-VECTOR-000007",
+    "model": "NODE_V1",
+    "hardwareRevision": "REV_A",
+    "firmwareTarget": "ESP32S3_LORA_SENSOR_V1",
+    "publicKeyFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "reflashTicket": {
+    "deviceId": "NODE_000007",
+    "firmwareTarget": "ESP32S3_LORA_SENSOR_V1",
+    "generation": 7,
+    "hardwareProof": "04cc89b8c7ee187100487d7ec08deb9f8419776e34eb29bac11ecdb73aec58f0",
+    "hardwareRevision": "REV_A",
+    "identityVersion": 3,
+    "model": "NODE_V1",
+    "nonce": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYX",
+    "operation": "REFLASH",
+    "physicalSerial": true,
+    "protocolVersion": 1,
+    "publicKeyFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "currentPublicKeyFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "radioId": 7,
+    "role": "NODE",
+    "serial": "SN-VECTOR-000007",
+    "ticketId": "flash-job-reflash-001",
+    "ttlMs": 120000
+  },
+  "reflashTicketSha256": "12a6287aad504cb7cf9525cf19b0f295d851ca34af791858f3b1cccee4f223db",
+  "flashAttestation": {
+    "boardId": "board-vector-001",
+    "jobId": "job-vector-001",
+    "releaseId": "release-vector-001",
+    "manifestSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "readbackSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "readbackLength": 4096,
+    "challenge": "challenge-vector-001",
+    "message": "{\"v\":1,\"domain\":\"farmos-web-serial-flash-attestation\",\"boardId\":\"board-vector-001\",\"jobId\":\"job-vector-001\",\"releaseId\":\"release-vector-001\",\"manifestSha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"readbackSha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"challenge\":\"challenge-vector-001\"}",
+    "messageSha256": "b6868b518236ca176e53c5d69c1d5700e6ccd7850c144d6accd2203ccb9df452"
+  }
+}

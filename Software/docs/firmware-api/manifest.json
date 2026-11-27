@@ -1,0 +1,65 @@
+{
+  "sourceRevision": "4fd7cb5",
+  "status": "candidate, source contract; see VERIFICATION.md for runtime proof",
+  "references": [
+    {
+      "source": "docs/MANUFACTURING_QR.md",
+      "snapshot": "reference/docs__MANUFACTURING_QR.md",
+      "sha256": "dd99564341c9772af681cbbb1d902f63a506f157fed0a027ddf64acf0ec46c71"
+    },
+    {
+      "source": "docs/OTA.md",
+      "snapshot": "reference/docs__OTA.md",
+      "sha256": "5563f612cb7854f356d14bbf39b0af3ebbb8578367a6d97543f2c9fe892bbb8f"
+    },
+    {
+      "source": "docs/CONFIG_CONTRACT.md",
+      "snapshot": "reference/docs__CONFIG_CONTRACT.md",
+      "sha256": "1fa0799f6f093a370cb7231377759d7a9be07904d54f25ea045947380d9b5aa8"
+    },
+    {
+      "source": "firmware/shared/include/farmos_protocol.h",
+      "snapshot": "reference/firmware__shared__include__farmos_protocol.h",
+      "sha256": "bd306f999eb9069504bfc5a7fa0ff7c492d6e700e8b2bb9edd2a315506cf4a1b"
+    },
+    {
+      "source": "firmware/shared/src/farmos_protocol.cpp",
+      "snapshot": "reference/firmware__shared__src__farmos_protocol.cpp",
+      "sha256": "f2cda55be21894d23617c45ebdadf7d5456dc6dcf93e463a66952b7d5d160d3b"
+    },
+    {
+      "source": "firmware/shared/include/factory_attestation.h",
+      "snapshot": "reference/firmware__shared__include__factory_attestation.h",
+      "sha256": "9ae9c8d1d3a5fb8252e01f6b7c84f3ec0e2c99e6c3ec4b6353747c4cd5aff6a9"
+    },
+    {
+      "source": "firmware/shared/src/factory_attestation.cpp",
+      "snapshot": "reference/firmware__shared__src__factory_attestation.cpp",
+      "sha256": "14dcf702f491442509e1fc5ba135031cb57426aaea54d0268bdc4e0512460c10"
+    },
+    {
+      "source": "firmware/components/onboarding_ble/include/ble_provisioning.h",
+      "snapshot": "reference/firmware__components__onboarding_ble__include__ble_provisioning.h",
+      "sha256": "5fa1ce926aa638adfc12b093e7488fa83332fe8193406b11ec47934c2be3f7a1"
+    },
+    {
+      "source": "firmware/components/onboarding_ble/src/ble_provisioning.cpp",
+      "snapshot": "reference/firmware__components__onboarding_ble__src__ble_provisioning.cpp",
+      "sha256": "05a873772e8609154df85f8b62fbc9ce1c92f95e32be1b519e95bacdb47ffffe"
+    },
+    {
+      "source": "firmware/gateway/main/main.cpp",
+      "snapshot": "reference/firmware__gateway__main__main.cpp",
+      "sha256": "8b1ab187abeabfd7dc57d03aecc1125d17e92040b0acb1453b92357ca0669330"
+    },
+    {
+      "source": "firmware/node/main/main.cpp",
+      "snapshot": "reference/firmware__node__main__main.cpp",
+      "sha256": "1f7bbc31ce53cf1f110955c62218a21a287dd311081c11fce6eb7d10a686dbec"
+    }
+  ],
+  "initialBenchmarkRevision": "a981055",
+  "runtimeRevision": "4fd7cb5",
+  "runtimeFrontendRevision": "257c91b",
+  "runtimeSimulatorRevision": "3aea412"
+}

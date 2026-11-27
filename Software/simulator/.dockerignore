@@ -1,0 +1,7 @@
+node_modules
+dist
+.lab
+.env*
+.gateway-simulator-outbox.json*
+certs
+lab-data

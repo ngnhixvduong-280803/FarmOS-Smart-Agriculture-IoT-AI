@@ -1,0 +1,30 @@
+buildscript {
+    ext {
+        buildToolsVersion = "37.0.0"
+        minSdkVersion = 24
+        compileSdkVersion = 37
+        targetSdkVersion = 36
+        ndkVersion = "27.1.12297006"
+        kotlinVersion = "2.2.0"
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle")
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+    }
+}
+
+// Apply the checked-in AGP 9 Prefab ordering fix to VisionCamera 4.x without
+// mutating node_modules or requiring a postinstall patch tool.
+def visionCameraPrefabFix = file("${rootDir}/vision-camera-prefab.gradle")
+gradle.beforeProject { project ->
+    if (project.name == "react-native-vision-camera") {
+        project.apply from: visionCameraPrefabFix
+    }
+}
+
+apply plugin: "com.facebook.react.rootproject"

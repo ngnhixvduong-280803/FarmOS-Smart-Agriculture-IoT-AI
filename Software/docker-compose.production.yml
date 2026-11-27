@@ -1,0 +1,93 @@
+services:
+  backend:
+    image: ghcr.io/levanduy093-work/farmos-backend:${IMAGE_TAG:-production}
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    env_file:
+      - ${SECRETS_FILE:-/opt/farmos/.env}
+    environment:
+      MQTT_BROKER_URL: mqtt://mosquitto:1883
+      PORT: 3000
+      FARMOS_FLASH_LAYOUT_PATH: /app/firmware/flash_layout.json
+      OTA_STORAGE_DIR: /var/lib/farmos/firmware
+    volumes:
+      - firmware_data:/var/lib/farmos/firmware
+    depends_on:
+      mosquitto:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/readyz').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  migrate:
+    image: ghcr.io/levanduy093-work/farmos-backend:${IMAGE_TAG:-production}
+    env_file:
+      - ${SECRETS_FILE:-/opt/farmos/.env}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    command:
+      - sh
+      - -ec
+      - |
+        if [ -d prisma/migrations ]; then
+          npx prisma migrate deploy
+        else
+          echo 'No Prisma migration directory yet; migration step skipped.'
+        fi
+    profiles: ["migration"]
+
+  frontend:
+    image: ghcr.io/levanduy093-work/farmos-frontend:${IMAGE_TAG:-production}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${PUBLIC_PORT:-8080}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    ports:
+      - "${MQTT_PUBLIC_PORT:-8883}:8883"
+    volumes:
+      - ${MQTT_CONFIG_DIR:-/opt/farmos/mosquitto}:/mosquitto/config:ro
+      - ${MQTT_CERTS_DIR:-/opt/farmos/mosquitto/certs}:/mosquitto/certs:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+
+  cloudflared:
+    image: ${CLOUDFLARED_IMAGE:?Set a tested Cloudflared image tag in /opt/farmos/.env}
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 128
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      frontend:
+        condition: service_healthy
+
+volumes:
+  firmware_data:
+  mosquitto_data:
+  mosquitto_log:

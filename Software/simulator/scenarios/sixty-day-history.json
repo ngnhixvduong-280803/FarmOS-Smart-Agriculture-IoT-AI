@@ -1,0 +1,666 @@
+{
+  "name": "Hai vườn · lịch sử 60 ngày",
+  "config": {
+    "seed": 42,
+    "startAt": "2026-08-01T00:00:00.000Z",
+    "stepMinutes": 60,
+    "weather": {
+      "meanC": 28,
+      "amplitudeC": 6,
+      "humidityPct": 70,
+      "peakLux": 50000,
+      "et0MmDay": 7
+    },
+    "nodes": [
+      {
+        "id": "SIM_NODE_01",
+        "gatewayId": "SIM_VUON_A",
+        "zoneId": "SIM_ZONE_A",
+        "cropId": "mustard-greens",
+        "soilId": "silt",
+        "ageDays": 18,
+        "areaM2": 100,
+        "initialVwc": 0.275,
+        "ph": 6.2,
+        "ec": 1,
+        "organicPct": 2
+      },
+      {
+        "id": "SIM_NODE_02",
+        "gatewayId": "SIM_VUON_A",
+        "zoneId": "SIM_ZONE_B",
+        "cropId": "chilli",
+        "soilId": "loamy-sand",
+        "ageDays": 45,
+        "areaM2": 50,
+        "initialVwc": 0.14,
+        "ph": 6.5,
+        "ec": 0.8,
+        "organicPct": 1.5
+      },
+      {
+        "id": "SIM_NODE_03",
+        "gatewayId": "SIM_VUON_B",
+        "zoneId": "SIM_ZONE_C",
+        "cropId": "tomato",
+        "soilId": "silty-clay",
+        "ageDays": 25,
+        "areaM2": 100,
+        "initialVwc": 0.34,
+        "ph": 6.2,
+        "ec": 1,
+        "organicPct": 2
+      }
+    ],
+    "events": [
+      {
+        "id": "irrigate-1-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 30,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-1-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 30,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-1-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 30,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "irrigate-4-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 102,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-4-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 102,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-4-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 102,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "irrigate-7-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 174,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-7-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 174,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-7-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 174,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "rain-7-0",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 183,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-7-1",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 183,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-7-2",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 183,
+        "durationHours": 4,
+        "value": 42
+      },
+      {
+        "id": "rain-8-0",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 207,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-8-1",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 207,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-8-2",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 207,
+        "durationHours": 4,
+        "value": 42
+      },
+      {
+        "id": "irrigate-10-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 246,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-10-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 246,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-10-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 246,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "irrigate-13-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 318,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-13-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 318,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-13-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 318,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "irrigate-16-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 390,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-16-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 390,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-16-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 390,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "rain-16-0",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 399,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-16-1",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 399,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-16-2",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 399,
+        "durationHours": 4,
+        "value": 42
+      },
+      {
+        "id": "irrigate-19-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 462,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-19-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 462,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-19-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 462,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "irrigate-22-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 534,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-22-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 534,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-22-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 534,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "irrigate-34-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 822,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-34-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 822,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-34-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 822,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "rain-35-0",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 855,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-35-1",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 855,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-35-2",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 855,
+        "durationHours": 4,
+        "value": 42
+      },
+      {
+        "id": "rain-36-0",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 879,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-36-1",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 879,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-36-2",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 879,
+        "durationHours": 4,
+        "value": 42
+      },
+      {
+        "id": "irrigate-37-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 894,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-37-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 894,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-37-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 894,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "irrigate-40-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 966,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-40-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 966,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-40-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 966,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "irrigate-43-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 1038,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-43-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 1038,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-43-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 1038,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "irrigate-46-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 1110,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-46-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 1110,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-46-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 1110,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "rain-48-0",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 1167,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-48-1",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 1167,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-48-2",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 1167,
+        "durationHours": 4,
+        "value": 42
+      },
+      {
+        "id": "irrigate-49-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 1182,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-49-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 1182,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-49-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 1182,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "irrigate-52-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 1254,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-52-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 1254,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-52-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 1254,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "irrigate-55-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 1326,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-55-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 1326,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-55-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 1326,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "rain-55-0",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 1335,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-55-1",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 1335,
+        "durationHours": 4,
+        "value": 11
+      },
+      {
+        "id": "rain-55-2",
+        "kind": "rain",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 1335,
+        "durationHours": 4,
+        "value": 42
+      },
+      {
+        "id": "irrigate-58-0",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 1398,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-58-1",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_02",
+        "atHour": 1398,
+        "durationHours": 1,
+        "value": 13
+      },
+      {
+        "id": "irrigate-58-2",
+        "kind": "irrigation",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 1398,
+        "durationHours": 1,
+        "value": 9
+      },
+      {
+        "id": "heatwave",
+        "kind": "heat",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 552,
+        "durationHours": 216,
+        "value": 6
+      },
+      {
+        "id": "offline",
+        "kind": "gateway_offline",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 960,
+        "durationHours": 12,
+        "value": 0
+      },
+      {
+        "id": "stuck",
+        "kind": "sensor_stuck",
+        "nodeId": "SIM_NODE_03",
+        "atHour": 1008,
+        "durationHours": 24,
+        "value": 0
+      },
+      {
+        "id": "no-flow",
+        "kind": "no_flow",
+        "nodeId": "SIM_NODE_01",
+        "atHour": 1110,
+        "durationHours": 1,
+        "value": 0
+      }
+    ]
+  }
+}

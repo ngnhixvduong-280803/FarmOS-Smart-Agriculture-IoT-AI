@@ -1,0 +1,333 @@
+#!/usr/bin/env sh
+set -eu
+
+# One script handles both the one-time secure bootstrap and every release.
+APP_DIR=${APP_DIR:-/opt/farmos}
+REPO_DIR=${REPO_DIR:-$APP_DIR/repository}
+REPO_URL=${REPO_URL:-https://github.com/levanduy093-work/FarmOS.git}
+STATE_FILE=${STATE_FILE:-$APP_DIR/current-release}
+RELEASES_DIR=${RELEASES_DIR:-$APP_DIR/releases}
+ACTIVE_COMPOSE_FILE=${ACTIVE_COMPOSE_FILE:-$APP_DIR/docker-compose.production.yml}
+COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-$(basename "${APP_DIR%/}")}
+BACKEND_IMAGE=${BACKEND_IMAGE:-ghcr.io/levanduy093-work/farmos-backend}
+FRONTEND_IMAGE=${FRONTEND_IMAGE:-ghcr.io/levanduy093-work/farmos-frontend}
+
+bootstrap() {
+  DEPLOY_USER=${DEPLOY_USER:-farmos-deploy}
+  ADMIN_USER=${ADMIN_USER:-farmos-admin}
+  DEPLOY_PUBLIC_KEY=${FARMOS_DEPLOY_PUBLIC_KEY:?Set FARMOS_DEPLOY_PUBLIC_KEY to the GitHub Actions public key.}
+  test "$(id -u)" -eq 0
+  case "$DEPLOY_PUBLIC_KEY" in ssh-ed25519\ *) ;; *) echo 'Only an ssh-ed25519 public key is accepted.' >&2; exit 64 ;; esac
+
+  if ! id "$DEPLOY_USER" >/dev/null 2>&1; then
+    useradd --system --create-home --shell /bin/sh "$DEPLOY_USER"
+  fi
+  install -d -o "$DEPLOY_USER" -g "$DEPLOY_USER" -m 700 "/home/$DEPLOY_USER/.ssh"
+  printf '%s\n' "command=\"/usr/bin/sudo -n /usr/local/sbin/farmos-release-run\",no-agent-forwarding,no-port-forwarding,no-pty,no-user-rc,no-X11-forwarding $DEPLOY_PUBLIC_KEY" > "/home/$DEPLOY_USER/.ssh/authorized_keys"
+  chown "$DEPLOY_USER:$DEPLOY_USER" "/home/$DEPLOY_USER/.ssh/authorized_keys"
+  chmod 600 "/home/$DEPLOY_USER/.ssh/authorized_keys"
+
+  if ! id "$ADMIN_USER" >/dev/null 2>&1; then
+    useradd --create-home --shell /bin/bash --groups docker "$ADMIN_USER"
+  fi
+  install -d -o "$ADMIN_USER" -g "$ADMIN_USER" -m 700 "/home/$ADMIN_USER/.ssh"
+  install -m 600 -o "$ADMIN_USER" -g "$ADMIN_USER" /root/.ssh/authorized_keys "/home/$ADMIN_USER/.ssh/authorized_keys"
+
+  install -m 750 "$0" /usr/local/sbin/farmos-release-run
+  printf '%s\n' 'Defaults:farmos-deploy env_keep += "SSH_ORIGINAL_COMMAND"' 'farmos-deploy ALL=(root) NOPASSWD: /usr/local/sbin/farmos-release-run' > /etc/sudoers.d/farmos-deploy
+  chmod 440 /etc/sudoers.d/farmos-deploy
+  visudo -cf /etc/sudoers.d/farmos-deploy
+  install -m 644 "$(dirname "$0")/farmos-ssh-hardening.conf" /etc/ssh/sshd_config.d/99-farmos-hardening.conf
+  sshd -t
+  systemctl reload ssh
+  install -d -m 755 /etc/apt/apt.conf.d /etc/fail2ban/jail.d
+  install -m 644 "$(dirname "$0")/apt/20auto-upgrades" /etc/apt/apt.conf.d/20auto-upgrades
+  install -m 644 "$(dirname "$0")/fail2ban/farmos-sshd.local" /etc/fail2ban/jail.d/farmos-sshd.local
+  systemctl enable --now unattended-upgrades fail2ban
+  systemctl disable --now farmos-deploy.timer 2>/dev/null || true
+  rm -f /etc/systemd/system/farmos-deploy.timer /etc/systemd/system/farmos-deploy.service
+  systemctl daemon-reload
+  echo "FarmOS CI/CD bootstrap completed for $DEPLOY_USER."
+}
+
+if [ "${1:-}" = '--bootstrap' ]; then
+  bootstrap
+  exit 0
+fi
+
+COMMAND=${SSH_ORIGINAL_COMMAND:-}
+case "$COMMAND" in deploy\ *) RELEASE_SHA=${COMMAND#deploy } ;; *) echo 'Expected command: deploy <full-release-sha>' >&2; exit 64 ;; esac
+case "$RELEASE_SHA" in ''|*[!0-9a-f]*) echo 'Invalid release SHA.' >&2; exit 64 ;; esac
+[ "${#RELEASE_SHA}" -eq 40 ] || { echo 'Invalid release SHA.' >&2; exit 64; }
+
+if [ ! -d "$REPO_DIR/.git" ]; then
+  git clone --no-checkout "$REPO_URL" "$REPO_DIR"
+fi
+git -C "$REPO_DIR" fetch --no-tags --depth=1 origin "$RELEASE_SHA"
+git -C "$REPO_DIR" cat-file -e "$RELEASE_SHA^{commit}"
+git -C "$REPO_DIR" checkout --detach --force "$RELEASE_SHA"
+test "$(git -C "$REPO_DIR" rev-parse HEAD)" = "$RELEASE_SHA"
+
+# The next release may change this script; run that exact reviewed version.
+if [ "${FARMOS_RELEASE_RUNNER_VERSION:-}" != "$RELEASE_SHA" ]; then
+  exec env FARMOS_RELEASE_RUNNER_VERSION="$RELEASE_SHA" "$REPO_DIR/deploy/farmos-release-run"
+fi
+
+install -d -m 750 "$APP_DIR" "$RELEASES_DIR"
+
+candidate_tag="sha-$RELEASE_SHA"
+candidate_compose="$RELEASES_DIR/$RELEASE_SHA/docker-compose.production.yml"
+current_tag=''
+if [ -e "$STATE_FILE" ]; then
+  if ! current_tag=$(cat "$STATE_FILE"); then
+    echo "Could not read current release state in $STATE_FILE; refusing deployment." >&2
+    exit 1
+  fi
+fi
+previous_tag=$current_tag
+previous_sha=''
+
+release_sha_from_tag() {
+  release_tag=$1
+  case "$release_tag" in
+    sha-*) release_sha=${release_tag#sha-} ;;
+    *) return 1 ;;
+  esac
+  [ "${#release_sha}" -eq 40 ] || return 1
+  case "$release_sha" in *[!0-9a-f]*) return 1 ;; esac
+  printf '%s\n' "$release_sha"
+}
+
+if [ -n "$previous_tag" ]; then
+  if ! previous_sha=$(release_sha_from_tag "$previous_tag"); then
+    echo "Invalid current release state in $STATE_FILE; refusing deployment." >&2
+    exit 64
+  fi
+fi
+
+write_worktree_compose() {
+  release_sha=$1
+  source_compose=$2
+  release_dir="$RELEASES_DIR/$release_sha"
+  release_compose="$release_dir/docker-compose.production.yml"
+  if ! install -d -m 750 "$release_dir"; then
+    return 1
+  fi
+  if ! temp_compose=$(mktemp "$release_dir/.docker-compose.production.yml.XXXXXX"); then
+    return 1
+  fi
+  if ! install -m 640 "$source_compose" "$temp_compose"; then
+    rm -f "$temp_compose"
+    return 1
+  fi
+  mv -f "$temp_compose" "$release_compose"
+  printf '%s\n' "$release_compose"
+}
+
+write_git_compose() {
+  release_sha=$1
+  release_dir="$RELEASES_DIR/$release_sha"
+  release_compose="$release_dir/docker-compose.production.yml"
+  if ! install -d -m 750 "$release_dir"; then
+    return 1
+  fi
+  if ! git -C "$REPO_DIR" cat-file -e "$release_sha^{commit}" >/dev/null 2>&1; then
+    echo "Fetching previous release commit $release_sha for rollback configuration." >&2
+    git -C "$REPO_DIR" fetch --no-tags --depth=1 origin "$release_sha" >&2 || return 1
+  fi
+  if ! temp_compose=$(mktemp "$release_dir/.docker-compose.production.yml.XXXXXX"); then
+    return 1
+  fi
+  if ! git -C "$REPO_DIR" show "$release_sha:docker-compose.production.yml" >"$temp_compose"; then
+    rm -f "$temp_compose"
+    return 1
+  fi
+  chmod 640 "$temp_compose"
+  mv -f "$temp_compose" "$release_compose"
+  printf '%s\n' "$release_compose"
+}
+
+# Keep each release's Compose contract beside its SHA. A failed candidate never
+# replaces the active Compose file, and rollback reads the previous commit's
+# file directly instead of checking out another detached tree mid-run.
+if ! candidate_compose=$(write_worktree_compose "$RELEASE_SHA" "$REPO_DIR/docker-compose.production.yml"); then
+  echo 'Could not save the candidate production Compose file.' >&2
+  exit 1
+fi
+compose_file=$candidate_compose
+
+compose() {
+  COMPOSE_PROJECT_NAME="$COMPOSE_PROJECT_NAME" SECRETS_FILE="$APP_DIR/.env" docker compose --project-directory "$APP_DIR" --env-file "$APP_DIR/.env" -f "$compose_file" "$@"
+}
+
+refresh_cloudflared() {
+  # cloudflared can retain the previous Docker DNS result after backend or
+  # frontend is recreated. Restart it only after the new origins are healthy
+  # so public hostnames cannot keep forwarding to a removed container IP.
+  compose restart cloudflared
+  compose up -d --no-deps --wait --wait-timeout 90 cloudflared
+}
+
+image_revision() {
+  docker image inspect "$1" --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}'
+}
+
+verify_release_images() {
+  verify_sha=$1
+  verify_tag="sha-$verify_sha"
+  verify_backend="$BACKEND_IMAGE:$verify_tag"
+  verify_frontend="$FRONTEND_IMAGE:$verify_tag"
+  verify_mode=${2:-pull}
+
+  # Candidate images are pulled by the deployment; rollback images are pulled
+  # only when absent so a registry outage does not discard a verified local copy.
+  for verify_image in "$verify_backend" "$verify_frontend"; do
+    if [ "$verify_mode" = pull ] || ! docker image inspect "$verify_image" >/dev/null 2>&1; then
+      docker pull "$verify_image"
+    fi
+    if [ "$(image_revision "$verify_image")" != "$verify_sha" ]; then
+      echo "Image $verify_image does not carry the requested release SHA." >&2
+      return 1
+    fi
+  done
+}
+
+redact_diagnostics() {
+  sed -E \
+    -e 's#(postgres(ql)?://)[^@[:space:]]+@#\1[REDACTED]@#g' \
+    -e 's#(://[^:[:space:]]+):[^@[:space:]]+@#\1:[REDACTED]@#g' \
+    -e 's#([A-Za-z_][A-Za-z0-9_]*(SECRET|TOKEN|PASSWORD|PRIVATE|SERVICE_ROLE|ANON_KEY|SIGNING_KEY))=[^[:space:]]+#\1=[REDACTED]#gI' \
+    -e '/-----BEGIN .*-----/,/-----END .*-----/ s/.*/[REDACTED PEM]/'
+}
+
+diagnose_release() {
+  diagnostic_tag=$1
+  diagnostic_compose=$2
+  echo "Release diagnostics for $diagnostic_tag (secret values redacted):" >&2
+  IMAGE_TAG="$diagnostic_tag" COMPOSE_PROJECT_NAME="$COMPOSE_PROJECT_NAME" SECRETS_FILE="$APP_DIR/.env" docker compose --project-directory "$APP_DIR" --env-file "$APP_DIR/.env" -f "$diagnostic_compose" ps >&2 || true
+  IMAGE_TAG="$diagnostic_tag" COMPOSE_PROJECT_NAME="$COMPOSE_PROJECT_NAME" SECRETS_FILE="$APP_DIR/.env" docker compose --project-directory "$APP_DIR" --env-file "$APP_DIR/.env" -f "$diagnostic_compose" logs --no-color --tail=80 backend frontend 2>&1 | redact_diagnostics >&2 || true
+}
+
+diagnose_candidate() {
+  [ -n "${candidate_compose:-}" ] || return 0
+  diagnose_release "$candidate_tag" "$candidate_compose"
+}
+
+rollback_in_progress=0
+rollback_required=0
+
+rollback() {
+  if [ "${rollback_in_progress:-0}" -eq 1 ]; then
+    return 1
+  fi
+  rollback_in_progress=1
+  if [ -f "$STATE_FILE" ]; then
+    if [ -z "$previous_tag" ] || [ -z "$previous_sha" ]; then
+      echo 'Deployment failed with no valid previous release; manual cleanup is required.' >&2
+      return 1
+    fi
+    echo "Deployment failed; restoring $previous_tag with its release-specific Compose file."
+    diagnose_candidate
+    if ! previous_compose=$(write_git_compose "$previous_sha"); then
+      echo 'Could not reconstruct the previous release Compose file; manual release inspection is required.' >&2
+      return 1
+    fi
+    if ! verify_release_images "$previous_sha" local; then
+      echo 'Previous release image verification failed; refusing an unverified rollback.' >&2
+      return 1
+    fi
+    compose_file=$previous_compose
+    if ! install -m 640 "$previous_compose" "$ACTIVE_COMPOSE_FILE"; then
+      echo 'Could not restore the active Compose file for rollback.' >&2
+      return 1
+    fi
+    if ! IMAGE_TAG="$previous_tag" compose up -d --wait --wait-timeout 90; then
+      diagnose_release "$previous_tag" "$previous_compose"
+      echo 'Rollback failed; manual release inspection is required.' >&2
+      return 1
+    fi
+    if ! IMAGE_TAG="$previous_tag" refresh_cloudflared; then
+      diagnose_release "$previous_tag" "$previous_compose"
+      echo 'Rollback restored the application containers but could not refresh the tunnel.' >&2
+      return 1
+    fi
+    echo 'Rollback restored the previous image and matching Compose contract.' >&2
+    echo 'Database migrations are not reverted; the previous release must remain schema-compatible.' >&2
+    rollback_required=0
+    return 0
+  fi
+  echo 'Deployment failed without a previous release state; manual release inspection is required.' >&2
+  return 1
+}
+
+on_signal() {
+  echo 'Deployment interrupted; attempting rollback.' >&2
+  rollback || true
+  exit 1
+}
+trap on_signal INT TERM HUP
+
+on_exit() {
+  exit_status=$?
+  if [ "$exit_status" -ne 0 ] && [ "${rollback_required:-0}" -eq 1 ]; then
+    rollback || true
+  fi
+  exit "$exit_status"
+}
+trap on_exit EXIT
+
+verify_release_images "$RELEASE_SHA"
+
+if [ "$candidate_tag" = "$current_tag" ]; then
+  install -m 640 "$candidate_compose" "$ACTIVE_COMPOSE_FILE"
+  echo "FarmOS already runs $candidate_tag."
+  exit 0
+fi
+
+echo 'Validating the production environment before migration.'
+if ! IMAGE_TAG="$candidate_tag" compose run --rm --no-deps backend node dist/config/preflight.js; then
+  echo 'Production environment preflight failed; the existing release is unchanged.' >&2
+  exit 1
+fi
+
+if ! IMAGE_TAG="$candidate_tag" compose --profile migration run --rm --no-deps migrate; then
+  echo 'Migration failed; keeping the existing release.' >&2
+  exit 1
+fi
+
+# From this point the candidate may have replaced running containers. Any
+# error, signal, or failed health-check must attempt the release-aware rollback.
+rollback_required=1
+if ! IMAGE_TAG="$candidate_tag" compose up -d --wait --wait-timeout 90; then
+  rollback
+  exit 1
+fi
+
+if ! IMAGE_TAG="$candidate_tag" refresh_cloudflared; then
+  echo 'Candidate origins are healthy but the Cloudflare tunnel could not be refreshed.' >&2
+  rollback
+  exit 1
+fi
+
+if ! install -m 640 "$candidate_compose" "$ACTIVE_COMPOSE_FILE"; then
+  echo 'Candidate is healthy but the active Compose file could not be updated.' >&2
+  rollback
+  exit 1
+fi
+
+state_tmp=$(mktemp "$APP_DIR/.current-release.XXXXXX")
+if ! printf '%s\n' "$candidate_tag" >"$state_tmp"; then
+  rm -f "$state_tmp"
+  echo 'Candidate is healthy but the deployment state could not be updated.' >&2
+  rollback
+  exit 1
+fi
+chmod 640 "$state_tmp"
+if ! mv -f "$state_tmp" "$STATE_FILE"; then
+  rm -f "$state_tmp"
+  echo 'Candidate is healthy but the deployment state could not be committed.' >&2
+  rollback
+  exit 1
+fi
+rollback_required=0
+echo "FarmOS deployed $candidate_tag."

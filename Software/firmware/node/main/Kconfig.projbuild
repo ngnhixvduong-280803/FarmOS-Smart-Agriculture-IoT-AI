@@ -1,0 +1,31 @@
+menu "FarmOS pump control"
+
+config FARMOS_PUMP_CONTROL
+    bool "Enable remote pump control on a commissioned Wi-Fi Node"
+    default n
+    help
+        Requires a hardwired fail-open pump interlock and dedicated,
+        electrically isolated permissive and contactor feedback inputs.
+
+config FARMOS_RELAY_BENCH_NODE_V1
+    bool "NODE_V1 dry-contact relay bench test (no pump or external load)"
+    depends on FARMOS_PUMP_CONTROL
+    default n
+    help
+        Only for NODE_232622412 and an unloaded SPDT relay. GPIO14 reads NO,
+        GPIO15 reads NC, and COM is connected to the Node ground. Both
+        readings must agree before a command can be confirmed.
+
+config FARMOS_PUMP_PERMISSIVE_GPIO
+    int "GPIO for isolated interlock permissive (HIGH when safe)"
+    depends on FARMOS_PUMP_CONTROL && !FARMOS_RELAY_BENCH_NODE_V1
+    range -1 48
+    default -1
+
+config FARMOS_PUMP_FEEDBACK_GPIO
+    int "GPIO for isolated contactor feedback (HIGH when energized)"
+    depends on FARMOS_PUMP_CONTROL && !FARMOS_RELAY_BENCH_NODE_V1
+    range -1 48
+    default -1
+
+endmenu

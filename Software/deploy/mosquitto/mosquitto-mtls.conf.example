@@ -1,0 +1,31 @@
+# Staged replacement for mosquitto.conf once every external gateway has a
+# certificate. It intentionally keeps backend MQTT on a separate internal
+# listener and accepts no password-only connection on the public listener.
+persistence true
+persistence_location /mosquitto/data/
+log_dest stdout
+message_size_limit 65536
+max_queued_messages 1000
+max_inflight_messages 20
+
+per_listener_settings true
+
+# Internal application listener; never publish this port on the VPS host.
+listener 1883
+allow_anonymous false
+password_file /mosquitto/config/password_file
+acl_file /mosquitto/config/acl
+
+# Internet-facing gateway listener. Client certificate CN becomes the ACL user.
+listener 8883
+allow_anonymous false
+acl_file /mosquitto/config/gateway-acl
+certfile /mosquitto/certs/fullchain.pem
+keyfile /mosquitto/certs/privkey.pem
+cafile /mosquitto/certs/gateway-ca.pem
+tls_version tlsv1.2
+require_certificate true
+use_identity_as_username true
+# Add `crlfile /mosquitto/certs/gateway-ca.crl.pem` after an actual CRL is
+# generated and installed. A revoked gateway must be removed from the ACL and
+# added to that CRL before reloading the broker.

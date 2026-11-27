@@ -1,0 +1,69 @@
+#!/bin/sh
+# Create one least-privilege MQTT account for one FarmOS gateway.
+# Usage: MQTT_GATEWAY_PASSWORD='...' provision-mqtt-gateway USER FARM_ID GATEWAY_ID NODE_ID [NODE_ID...]
+set -eu
+
+if [ "$#" -lt 4 ]; then
+  echo "Usage: MQTT_GATEWAY_PASSWORD=... $0 USER FARM_ID GATEWAY_ID NODE_ID [NODE_ID...]" >&2
+  exit 64
+fi
+
+USERNAME=$1
+FARM_ID=$2
+GATEWAY_ID=$3
+shift 3
+
+for IDENTIFIER in "$USERNAME" "$FARM_ID" "$GATEWAY_ID" "$@"; do
+  case "$IDENTIFIER" in
+  ''|*[!A-Za-z0-9_-]*)
+    echo "User, farm, gateway, and node IDs may contain only letters, digits, underscores, and hyphens." >&2
+    exit 64
+    ;;
+  esac
+done
+
+if [ -z "${MQTT_GATEWAY_PASSWORD:-}" ] || [ "${#MQTT_GATEWAY_PASSWORD}" -lt 16 ]; then
+  echo "MQTT_GATEWAY_PASSWORD must be set and be at least 16 characters." >&2
+  exit 64
+fi
+
+MQTT_DIR=${MQTT_DIR:-/opt/farmos/mosquitto}
+COMPOSE_FILE=${COMPOSE_FILE:-/opt/farmos/docker-compose.production.yml}
+ENV_FILE=${ENV_FILE:-/opt/farmos/.env}
+ACL_FILE="$MQTT_DIR/acl"
+PASSWORD_FILE="$MQTT_DIR/password_file"
+
+test -f "$ACL_FILE"
+test -f "$PASSWORD_FILE"
+if grep -Fqx "user $USERNAME" "$ACL_FILE"; then
+  echo "Gateway user already exists in ACL: $USERNAME" >&2
+  exit 65
+fi
+
+MOSQUITTO_UID="$(docker run --rm --entrypoint sh eclipse-mosquitto:2 -c 'id -u mosquitto')"
+MOSQUITTO_GID="$(docker run --rm --entrypoint sh eclipse-mosquitto:2 -c 'id -g mosquitto')"
+
+docker run --rm --entrypoint mosquitto_passwd \
+  -v "$MQTT_DIR:/mosquitto/config" \
+  eclipse-mosquitto:2 \
+  -b /mosquitto/config/password_file "$USERNAME" "$MQTT_GATEWAY_PASSWORD"
+
+ACL_TEMP="$(mktemp "$MQTT_DIR/.acl.XXXXXX")"
+trap 'rm -f "$ACL_TEMP"' EXIT HUP INT TERM
+cp "$ACL_FILE" "$ACL_TEMP"
+{
+  printf '\nuser %s\n' "$USERNAME"
+  printf 'topic read farm/%s/zone/+/command\n' "$FARM_ID"
+  printf 'topic write farm/%s/node/%s/status\n' "$FARM_ID" "$GATEWAY_ID"
+  printf 'topic write farm/%s/node/%s/ack\n' "$FARM_ID" "$GATEWAY_ID"
+  for NODE_ID in "$@"; do
+    printf 'topic write farm/%s/node/%s/telemetry\n' "$FARM_ID" "$NODE_ID"
+  done
+} >> "$ACL_TEMP"
+chown "$MOSQUITTO_UID:$MOSQUITTO_GID" "$PASSWORD_FILE" "$ACL_TEMP"
+chmod 600 "$PASSWORD_FILE" "$ACL_TEMP"
+mv "$ACL_TEMP" "$ACL_FILE"
+trap - EXIT HUP INT TERM
+
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" restart mosquitto
+echo "Provisioned $USERNAME for gateway $GATEWAY_ID in farm $FARM_ID."

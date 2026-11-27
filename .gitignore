@@ -1,0 +1,75 @@
+# === Excluded academic, report & assignment files ===
+*.docx
+*.pptx
+Lesson Plan DAKTNC_Tuan12.pdf
+Thông số về cây/
+Bản phân công và chấm công.xlsx
+~$*
+
+# === OS & Editor files ===
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# === Environment Variables & Secrets ===
+.env
+.env.local
+.env.production
+*.pem
+.local-backups/
+
+# === Node / JavaScript ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+.next/
+.wrangler/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# === Flutter / Dart / Mobile ===
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+ios/Flutter/Generated.xcconfig
+android/.gradle
+android/app/build/
+
+# === PlatformIO / Firmware ===
+.pio/
+.pioenvs/
+.piolibdeps/
+.clangd/
+Software/firmware/**/managed_components/
+Software/firmware/**/sdkconfig.*
+!Software/firmware/**/sdkconfig.defaults
+!Software/firmware/**/sdkconfig.defaults.*
+Software/firmware/**/keys/
+
+# === Generated config & local data ===
+Software/config/generated/*
+!Software/config/generated/.gitkeep
+postgres_data/
+mosquitto_data/
+mosquitto_log/
+Software/backend/storage/firmware/*
+!Software/backend/storage/firmware/.gitkeep
+Software/simulator/.lab-standalone/
+Software/simulator/.env.standalone-cloud
+Software/simulator/.env.standalone-cloud.pending
+
+# === Rust / Tauri build artifacts ===
+Software/desktop-flasher/src-tauri/target/

@@ -1,0 +1,12 @@
+# The `user` value is the certificate Common Name (CN), not a shared password.
+# Create one block per gateway, enumerate its node IDs, and never use # or a
+# wildcard for a node ID. Topic wildcards are limited to that gateway's command
+# subscription within its own farm.
+
+# user GATEWAY_01
+# topic read farm/F01/zone/+/command
+# topic write farm/F01/node/GATEWAY_01/status
+# topic write farm/F01/node/GATEWAY_01/ack
+# topic write farm/F01/node/NODE_Z01_01/telemetry
+# topic write farm/F01/node/NODE_Z02_01/telemetry
+# topic write farm/F01/node/NODE_Z03_01/telemetry

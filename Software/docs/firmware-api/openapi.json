@@ -1,0 +1,3144 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "FarmOS firmware-facing HTTP contract",
+    "version": "0.1.0-candidate",
+    "description": "Source-derived contract. Production deployment and hardware acceptance are separate; read VERIFICATION.md and GAPS.md. No synthetic API for physical firmware."
+  },
+  "servers": [
+    {
+      "url": "https://api.trendhub.sbs",
+      "description": "Production; confirm deployed revision before acceptance"
+    },
+    {
+      "url": "http://127.0.0.1:4081",
+      "description": "VPS isolated preview through SSH tunnel; never use plaintext on public network"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "DeviceId": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-farmos-device-id"
+      },
+      "DeviceToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-farmos-device-token"
+      },
+      "MobileBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Telemetry": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "nodeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "timestamp": {
+            "type": "number",
+            "description": "Unix seconds; invalid/too-future replaced by server time"
+          },
+          "soil_temp": {
+            "type": "number",
+            "minimum": -55,
+            "maximum": 125,
+            "description": "°C"
+          },
+          "air_temp": {
+            "type": "number",
+            "minimum": -55,
+            "maximum": 125,
+            "description": "°C; SHT30 air sensor"
+          },
+          "soil_moisture": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "%; calibration/unit metadata not available"
+          },
+          "air_humidity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "%RH"
+          },
+          "lux": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 200000,
+            "description": "lux"
+          },
+          "quality": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255,
+            "default": 1
+          }
+        },
+        "required": [
+          "eventId",
+          "nodeId"
+        ],
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "soil_temp"
+            ]
+          },
+          {
+            "required": [
+              "air_temp"
+            ]
+          },
+          {
+            "required": [
+              "soil_moisture"
+            ]
+          },
+          {
+            "required": [
+              "air_humidity"
+            ]
+          },
+          {
+            "required": [
+              "lux"
+            ]
+          }
+        ]
+      },
+      "DirectTelemetry": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "nodeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "timestamp": {
+            "type": "number",
+            "description": "Unix seconds; invalid/too-future replaced by server time"
+          },
+          "soil_temp": {
+            "type": "number",
+            "minimum": -55,
+            "maximum": 125,
+            "description": "°C"
+          },
+          "air_temp": {
+            "type": "number",
+            "minimum": -55,
+            "maximum": 125,
+            "description": "°C; SHT30 air sensor"
+          },
+          "soil_moisture": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "%; calibration/unit metadata not available"
+          },
+          "air_humidity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "%RH"
+          },
+          "lux": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 200000,
+            "description": "lux"
+          },
+          "quality": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255,
+            "default": 1
+          }
+        },
+        "required": [
+          "eventId"
+        ],
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "soil_temp"
+            ]
+          },
+          {
+            "required": [
+              "air_temp"
+            ]
+          },
+          {
+            "required": [
+              "soil_moisture"
+            ]
+          },
+          {
+            "required": [
+              "air_humidity"
+            ]
+          },
+          {
+            "required": [
+              "lux"
+            ]
+          }
+        ],
+        "description": "Server overwrites nodeId with authenticated device ID."
+      },
+      "QrV3": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "type": "string"
+          },
+          "qrId": {
+            "type": "string"
+          },
+          "deviceId": {
+            "type": "string"
+          },
+          "serial": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "hardwareRevision": {
+            "type": "string"
+          },
+          "kid": {
+            "type": "string"
+          },
+          "sig": {
+            "type": "string"
+          },
+          "v": {
+            "type": "integer",
+            "enum": [
+              3
+            ]
+          }
+        },
+        "required": [
+          "v",
+          "issuer",
+          "qrId",
+          "deviceId",
+          "serial",
+          "type",
+          "model",
+          "hardwareRevision",
+          "kid",
+          "sig"
+        ]
+      },
+      "Envelope": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true
+          },
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "TelemetryAck": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "persisted": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ]
+              },
+              "duplicate": {
+                "type": "boolean"
+              },
+              "dropped": {
+                "type": "boolean",
+                "description": "true means no sensor row persisted; dead-letter locally"
+              },
+              "nodeId": {
+                "type": "string"
+              },
+              "telemetryId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "persisted"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "Status": {
+        "type": "object",
+        "properties": {
+          "firmwareVersion": {
+            "type": "string",
+            "maxLength": 64
+          }
+        }
+      },
+      "Redeem": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string"
+          },
+          "sessionId": {
+            "type": "string"
+          },
+          "provisioningToken": {
+            "type": "string"
+          },
+          "firmwareVersion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "deviceId",
+          "sessionId",
+          "provisioningToken"
+        ]
+      },
+      "RedeemAck": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "deviceAccessToken": {
+                "type": "string"
+              },
+              "gatewayAccessToken": {
+                "type": "string"
+              },
+              "deploymentMode": {
+                "type": "string",
+                "enum": [
+                  "GATEWAY",
+                  "STANDALONE_NODE"
+                ]
+              },
+              "device": {
+                "$ref": "#/components/schemas/PublicDevice"
+              }
+            },
+            "required": [
+              "deviceAccessToken"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "PublicDevice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "serialNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "farmId": {
+            "type": "string",
+            "nullable": true
+          },
+          "online": {
+            "type": "boolean"
+          },
+          "lastSeen": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "firmwareVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "connectionMode": {
+            "type": "string"
+          },
+          "deploymentMode": {
+            "type": "string"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "online"
+        ]
+      },
+      "DeviceStatusAck": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PublicDevice"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "PairingNext": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "pairingId": {
+                "type": "string"
+              },
+              "nodeId": {
+                "type": "string"
+              },
+              "radioToken": {
+                "type": "string"
+              },
+              "ttlMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "pairingId",
+              "nodeId",
+              "radioToken",
+              "ttlMs",
+              "expiresAt"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "PairingConfirmation": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "pairingId": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "ACTIVE"
+                ]
+              },
+              "nodeId": {
+                "type": "string"
+              },
+              "gatewayId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "pairingId",
+              "status"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "LifecycleNext": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "commandId": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "RELEASE_ACCOUNT",
+                  "DECOMMISSION"
+                ]
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "commandId",
+              "type",
+              "expiresAt"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "LifecycleAck": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "commandId": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "ACKNOWLEDGED"
+                ]
+              }
+            },
+            "required": [
+              "commandId",
+              "status"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "LifecycleApplied": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "commandId": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "APPLIED"
+                ]
+              }
+            },
+            "required": [
+              "commandId",
+              "status"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "FirmwareRelease": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "deviceType": {
+            "type": "string",
+            "enum": [
+              "GATEWAY",
+              "SENSOR_NODE"
+            ]
+          },
+          "firmwareTarget": {
+            "type": "string"
+          },
+          "hardwareRevisions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "partitionScheme": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+          },
+          "sizeBytes": {
+            "type": "integer"
+          },
+          "changelog": {
+            "type": "string"
+          },
+          "releaseDate": {
+            "type": "string"
+          },
+          "minVersion": {
+            "type": "string"
+          },
+          "rolloutPercent": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "PAUSED",
+              "REVOKED"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "deviceType",
+          "firmwareTarget",
+          "hardwareRevisions",
+          "partitionScheme",
+          "version",
+          "sha256",
+          "sizeBytes"
+        ]
+      },
+      "OtaCheck": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "updateAvailable": {
+                "type": "boolean"
+              },
+              "currentVersion": {
+                "type": "string"
+              },
+              "latestRelease": {
+                "$ref": "#/components/schemas/FirmwareRelease"
+              },
+              "jobId": {
+                "type": "string"
+              },
+              "downloadUrl": {
+                "type": "string",
+                "description": "Use URL unchanged; credential still required"
+              }
+            },
+            "required": [
+              "updateAvailable",
+              "currentVersion"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "ClaimChallenge": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "deviceId": {
+                "type": "string"
+              },
+              "challenge": {
+                "type": "string"
+              },
+              "provisioningToken": {
+                "type": "string"
+              },
+              "nonce": {
+                "type": "string"
+              },
+              "identityVersion": {
+                "type": "integer"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "sessionId",
+              "deviceId",
+              "challenge",
+              "provisioningToken",
+              "nonce",
+              "identityVersion",
+              "expiresAt",
+              "status"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "ClaimState": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "deviceId": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "farmId": {
+                "type": "string"
+              },
+              "zoneId": {
+                "type": "string",
+                "nullable": true
+              },
+              "deploymentMode": {
+                "type": "string"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "finalizedNodeId": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "sessionId",
+              "deviceId",
+              "status",
+              "expiresAt"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "ClaimAttested": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "attestedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "sessionId",
+              "status",
+              "attestedAt"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/onboarding/devices/redeem": {
+      "post": {
+        "operationId": "post__onboarding_devices_redeem",
+        "summary": "Device redeems finalized provisioning session",
+        "description": "No permanent credential yet; session possession token required. V3 must be finalized. V2 disabled by default.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedeemAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Redeem"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding/device/status": {
+      "post": {
+        "operationId": "post__onboarding_device_status",
+        "summary": "Device heartbeat and running firmware",
+        "description": "Send about every30 seconds; TTL120 seconds. Water/relay safety fields not implemented here.",
+        "security": [
+          {
+            "DeviceId": [],
+            "DeviceToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceStatusAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Status"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding/gateway/status": {
+      "post": {
+        "operationId": "post__onboarding_gateway_status",
+        "summary": "Compatibility heartbeat alias",
+        "description": "",
+        "security": [
+          {
+            "DeviceId": [],
+            "DeviceToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceStatusAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Status"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding/gateway/telemetry": {
+      "post": {
+        "operationId": "post__onboarding_gateway_telemetry",
+        "summary": "Gateway relays sensor sample",
+        "description": "Gateway credential + active leaf binding, or own local sensor with zone. HTTP200 dropped=true is not sensor persistence.",
+        "security": [
+          {
+            "DeviceId": [],
+            "DeviceToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Telemetry"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding/device/telemetry": {
+      "post": {
+        "operationId": "post__onboarding_device_telemetry",
+        "summary": "Standalone/gateway own sensor sample",
+        "description": "Direct cloud mode and assigned farm/zone required. Idempotency namespace differs from gateway relay; do not switch endpoint during retries.",
+        "security": [
+          {
+            "DeviceId": [],
+            "DeviceToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DirectTelemetry"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding/gateway/pairing-sessions/next": {
+      "get": {
+        "operationId": "get__onboarding_gateway_pairing_sessions_next",
+        "summary": "Gateway polls pending pairing",
+        "description": "data=null or pairingId/nodeId/radioToken/ttlMs/expiresAt; polling advances PENDING to GATEWAY_READY.",
+        "security": [
+          {
+            "DeviceId": [],
+            "DeviceToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingNext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding/gateway/pairing-sessions/{id}/confirm": {
+      "post": {
+        "operationId": "post__onboarding_gateway_pairing_sessions_id_confirm",
+        "summary": "Confirm verified LoRa pairing",
+        "description": "Only after authenticated radio handshake and valid sensor frame. Revokes old bindings.",
+        "security": [
+          {
+            "DeviceId": [],
+            "DeviceToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingConfirmation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "radioToken": {
+                    "type": "string"
+                  },
+                  "rssi": {
+                    "type": "number"
+                  },
+                  "snr": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "radioToken"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/device-commands/next": {
+      "get": {
+        "operationId": "get__onboarding_device_commands_next",
+        "summary": "Poll lifecycle command",
+        "description": "data=null or commandId/type/expiresAt. RELEASE_ACCOUNT is not irrigation. DECOMMISSION may also be delivered; /applied currently accepts RELEASE_ACCOUNT only. Do not treat it as a supported physical erase command.",
+        "security": [
+          {
+            "DeviceId": [],
+            "DeviceToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LifecycleNext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding/device-commands/{id}/ack": {
+      "post": {
+        "operationId": "post__onboarding_device_commands_id_ack",
+        "summary": "Lifecycle command ack",
+        "description": "Command scoped to credential; applied requires acknowledged unexpired RELEASE_ACCOUNT and revokes credential.",
+        "security": [
+          {
+            "DeviceId": [],
+            "DeviceToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LifecycleAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/device-commands/{id}/applied": {
+      "post": {
+        "operationId": "post__onboarding_device_commands_id_applied",
+        "summary": "Lifecycle command applied",
+        "description": "Command scoped to credential; applied requires acknowledged unexpired RELEASE_ACCOUNT and revokes credential.",
+        "security": [
+          {
+            "DeviceId": [],
+            "DeviceToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LifecycleApplied"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/qr/resolve": {
+      "post": {
+        "operationId": "post__onboarding_qr_resolve",
+        "summary": "App resolves signed QRv3",
+        "description": "Public metadata only; not claim authorization.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "payload": {
+                    "$ref": "#/components/schemas/QrV3"
+                  }
+                },
+                "required": [
+                  "payload"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding/qr/claim-sessions": {
+      "post": {
+        "operationId": "post__onboarding_qr_claim_sessions",
+        "summary": "App creates challenge session",
+        "description": "Requires existing released factory identity, farm access and signed QR. Response sessionId/deviceId/challenge/provisioningToken/nonce/identityVersion/expiresAt/status; send challenge to BLE board.",
+        "security": [
+          {
+            "MobileBearer": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimChallenge"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "payload": {
+                    "$ref": "#/components/schemas/QrV3"
+                  },
+                  "farmId": {
+                    "type": "string"
+                  },
+                  "zoneId": {
+                    "type": "string"
+                  },
+                  "gatewayId": {
+                    "type": "string"
+                  },
+                  "deploymentMode": {
+                    "type": "string",
+                    "enum": [
+                      "GATEWAY",
+                      "LEAF_NODE",
+                      "STANDALONE_NODE"
+                    ]
+                  }
+                },
+                "required": [
+                  "payload",
+                  "farmId",
+                  "deploymentMode"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/qr/claim-sessions/{id}": {
+      "get": {
+        "operationId": "get__onboarding_qr_claim_sessions_id",
+        "summary": "App polls claim",
+        "description": "",
+        "security": [
+          {
+            "MobileBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/qr/claim-sessions/{id}/attest": {
+      "post": {
+        "operationId": "post__onboarding_qr_claim_sessions_id_attest",
+        "summary": "App submits board signature",
+        "description": "DER P-256 SHA256 signature encoded base64url, transcript in CONTRACT.md and vector.",
+        "security": [
+          {
+            "MobileBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimAttested"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "signature": {
+                    "type": "string"
+                  },
+                  "provisioningToken": {
+                    "type": "string"
+                  },
+                  "nonce": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "signature",
+                  "provisioningToken",
+                  "nonce"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/qr/claim-sessions/{id}/finalize": {
+      "post": {
+        "operationId": "post__onboarding_qr_claim_sessions_id_finalize",
+        "summary": "App finalizes attested claim",
+        "description": "Response includes provisioning for cloud mode or pairing for leaf. Board must redeem or confirm before declaring transport ready.",
+        "security": [
+          {
+            "MobileBearer": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/pairing-sessions/{id}": {
+      "get": {
+        "operationId": "get__onboarding_pairing_sessions_id",
+        "summary": "App polls pairing",
+        "description": "",
+        "security": [
+          {
+            "MobileBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/ota/check": {
+      "get": {
+        "operationId": "get__ota_check",
+        "summary": "Check compatible OTA release",
+        "description": "Credential scopes deviceId. updateAvailable=false or latestRelease/jobId/downloadUrl; download URL contains short-lived ticket.",
+        "security": [
+          {
+            "DeviceId": [],
+            "DeviceToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OtaCheck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deviceType",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "GATEWAY",
+                "SENSOR_NODE"
+              ]
+            }
+          },
+          {
+            "name": "currentVersion",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/ota/status": {
+      "post": {
+        "operationId": "post__ota_status",
+        "summary": "Report device OTA state",
+        "description": "Use jobId from check. BOOT_CONFIRMED only from credential of rebooted device; leaf BLE proof contract unresolved.",
+        "security": [
+          {
+            "DeviceId": [],
+            "DeviceToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "deviceType": {
+                    "type": "string",
+                    "enum": [
+                      "GATEWAY",
+                      "SENSOR_NODE"
+                    ]
+                  },
+                  "targetVersion": {
+                    "type": "string"
+                  },
+                  "jobId": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "DOWNLOADING",
+                      "FLASHING",
+                      "FLASHED",
+                      "BOOT_CONFIRMED",
+                      "FAILED"
+                    ]
+                  },
+                  "progress": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "error": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "deviceId",
+                  "deviceType",
+                  "targetVersion",
+                  "status"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ota/events": {
+      "get": {
+        "operationId": "get__ota_events",
+        "summary": "Read own OTA audit",
+        "description": "",
+        "security": [
+          {
+            "DeviceId": [],
+            "DeviceToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; inspect domain ACK, not HTTP status alone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/ota/download/{deviceType}/{version}": {
+      "get": {
+        "operationId": "get__ota_download_deviceType_version",
+        "summary": "Download signed-ticket OTA binary",
+        "description": "Use downloadUrl from check unchanged, plus device auth. Verify SHA256/target/project/version, write inactive partition.",
+        "security": [
+          {
+            "DeviceId": [],
+            "DeviceToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Firmware binary stream",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid/revoked device or user auth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden topology/mode/farm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Expired/conflicting session/job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota exhausted; preserve outbox and respect Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not persisted; retry same event ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deviceType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ticket",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

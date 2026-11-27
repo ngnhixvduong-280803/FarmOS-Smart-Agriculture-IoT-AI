@@ -1,0 +1,19 @@
+idf_component_register(
+    SRCS
+        "src/farmos_protocol.cpp"
+        "src/device_identity.cpp"
+        "src/factory_attestation.cpp"
+        "src/serial_enrollment.cpp"
+        "src/sx1278_radio.cpp"
+    INCLUDE_DIRS "include"
+    REQUIRES
+        esp_driver_gpio
+        esp_driver_spi
+        esp_timer
+        esp_driver_uart
+        esp_driver_usb_serial_jtag
+        app_update
+        espressif__cjson
+        mbedtls
+        nvs_flash
+)

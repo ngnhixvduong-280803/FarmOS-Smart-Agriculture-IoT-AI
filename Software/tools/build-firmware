@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+set -eu
+
+task_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+task_venv="$task_root/.venv/firmware"
+task_requirements="$task_root/tools/firmware-requirements.txt"
+
+if [ ! -x "$task_venv/bin/python" ]; then
+  python3 -m venv "$task_venv"
+fi
+if ! cmp -s "$task_requirements" "$task_venv/requirements.txt"; then
+  "$task_venv/bin/python" -m pip install --disable-pip-version-check -r "$task_requirements"
+  cp "$task_requirements" "$task_venv/requirements.txt"
+fi
+
+PATH="$task_venv/bin:$PATH"
+export PATH
+exec "$task_venv/bin/python" "$task_root/tools/build_firmware.py" "$@"
